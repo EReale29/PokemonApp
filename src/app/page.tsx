@@ -1,101 +1,192 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import React, { useEffect, useState } from "react";
+import PokemonCard from "@/components/PokemonCard";
+import PokemonModal from "@/components/PokemonModal";
+import { fetchPokemonList } from "@/utils/api";
+import { pokemonTypes, typeBadges } from "@/utils/types"; // ✅ Import des types et badges
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+export default function HomePage() {
+    const [pokemonList, setPokemonList] = useState([]);
+    const [filteredPokemon, setFilteredPokemon] = useState([]);
+    const [selectedPokemon, setSelectedPokemon] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState(""); // 🔎 Recherche par nom
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]); // 🔥 Filtrage multi-types
+    const [dropdownOpen, setDropdownOpen] = useState(false); // ✅ Gère l'ouverture du menu de filtrage
+    const [pageDropdownOpen, setPageDropdownOpen] = useState(false); // ✅ Gère l'ouverture du menu de pagination
+    const pokemonsPerPage = 12; // ✅ Nombre de Pokémon par page
+
+    useEffect(() => {
+        async function loadPokemon() {
+            try {
+                const data = await fetchPokemonList();
+                setPokemonList(data);
+                setFilteredPokemon(data);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        loadPokemon();
+    }, []);
+
+    // ✅ Gestion des types sélectionnés
+    const handleTypeChange = (type: string) => {
+        setSelectedTypes((prev) =>
+            prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+        );
+    };
+
+    // ✅ Filtrage des Pokémon en fonction du nom et des types
+    useEffect(() => {
+        let filtered = pokemonList;
+
+        if (searchTerm) {
+            filtered = filtered.filter(pokemon =>
+                pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        if (selectedTypes.length > 0) {
+            filtered = filtered.filter(pokemon =>
+                pokemon.apiTypes.some(type => selectedTypes.includes(type.name))
+            );
+        }
+
+        setFilteredPokemon(filtered);
+        setCurrentPage(1); // ✅ Réinitialiser la page après filtrage
+    }, [searchTerm, selectedTypes, pokemonList]);
+
+    // ✅ Toggle Dropdown (Filtrage par types)
+    const toggleDropdown = () => {
+        setDropdownOpen(!dropdownOpen);
+    };
+
+    // ✅ Toggle Dropdown (Pagination)
+    const togglePageDropdown = () => {
+        setPageDropdownOpen(!pageDropdownOpen);
+    };
+
+    // ✅ Pagination
+    const totalPages = Math.ceil(filteredPokemon.length / pokemonsPerPage);
+    const indexOfLastPokemon = currentPage * pokemonsPerPage;
+    const indexOfFirstPokemon = indexOfLastPokemon - pokemonsPerPage;
+    const currentPokemons = filteredPokemon.slice(indexOfFirstPokemon, indexOfLastPokemon);
+
+    // ✅ Changer de page
+    const changePage = (pageNumber: number) => {
+        if (pageNumber >= 1 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+            setPageDropdownOpen(false); // ✅ Fermer le dropdown après sélection
+        }
+    };
+
+    return (
+        <div className="container mt-4">
+            <h1 className="text-center title mb-4">Liste des Pokémon</h1>
+
+            {/* ✅ Barre de recherche et Filtrage */}
+            <div className="d-flex justify-content-center gap-3 mb-3">
+                {/* Champ de recherche */}
+                <input
+                    type="text"
+                    className="form-control w-50"
+                    placeholder="Rechercher un Pokémon..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+
+                {/* Dropdown pour filtrer par type avec checkboxes */}
+                <div className="dropdown">
+                    <button
+                        className="btn btn-light dropdown-toggle"
+                        type="button"
+                        onClick={toggleDropdown}
+                    >
+                        Filtrer par type
+                    </button>
+                    {dropdownOpen && (
+                        <div className="dropdown-menu show p-3" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                            {pokemonTypes.slice(1).map((type) => (
+                                <div key={type} className="form-check">
+                                    <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id={`type-${type}`}
+                                        checked={selectedTypes.includes(type)}
+                                        onChange={() => handleTypeChange(type)}
+                                    />
+                                    <label className={`form-check-label badge ${typeBadges[type] || "bg-secondary text-white"}`} htmlFor={`type-${type}`}>
+                                        {type}
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ✅ Affichage des Pokémon */}
+            <div className="row">
+                {currentPokemons.length > 0 ? (
+                    currentPokemons.map((pokemon: any) => (
+                        <div key={pokemon.id} className="col-md-3">
+                            <PokemonCard pokemon={pokemon} onClick={() => setSelectedPokemon(pokemon)} />
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-center">Aucun Pokémon trouvé</p>
+                )}
+            </div>
+
+            {/* ✅ Pagination avec Dropdown */}
+            {totalPages > 1 && (
+                <nav className="d-flex justify-content-center mt-4">
+                    <ul className="pagination">
+                        {/* Bouton Précédent */}
+                        <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                            <button className="page-link" onClick={() => changePage(currentPage - 1)}>
+                                Précédent
+                            </button>
+                        </li>
+
+                        {/* ✅ Dropdown de pagination qui s'ouvre vers le haut */}
+                        <li className="page-item dropup">
+                            <button
+                                className="page-link dropdown-toggle"
+                                type="button"
+                                onClick={togglePageDropdown}
+                            >
+                                Page {currentPage} / {totalPages}
+                            </button>
+                            {pageDropdownOpen && (
+                                <ul className="dropdown-menu show" style={{ maxHeight: "200px", overflowY: "auto" }}>
+                                    {Array.from({ length: totalPages }, (_, i) => (
+                                        <li key={i + 1}>
+                                            <button
+                                                className={`dropdown-item ${currentPage === i + 1 ? "active" : ""}`}
+                                                onClick={() => changePage(i + 1)}
+                                            >
+                                                Page {i + 1}
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </li>
+
+                        {/* Bouton Suivant */}
+                        <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                            <button className="page-link" onClick={() => changePage(currentPage + 1)}>
+                                Suivant
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            )}
+
+            {/* ✅ Affichage du modal si un Pokémon est sélectionné */}
+            {selectedPokemon && <PokemonModal pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    );
 }

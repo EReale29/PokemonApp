@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.bg-purple {
+  background-color: purple !important;
+  color: white !important;
+}
+
+.bg-brown {
+  background-color: brown !important;
+  color: white !important;
+}
+
+.bg-pink {
+  background-color: pink !important;
+  color: black !important;
+}
+
+/* ✅ Effet hover amélioré pour la Navbar */
+.navbar-nav .nav-link {
+  transition: color 0.3s ease-in-out, background-color 0.3s ease-in-out;
+}
+
+.navbar-nav .nav-link.hover-effect:hover {
+  color: white !important;
+  background-color: black !important;
+  border-radius: 5px;
+}
+
+/* ✅ Forcer le dropdown à s'ouvrir vers le haut */
+.dropup .dropdown-menu {
+  top: auto !important;
+  bottom: 100% !important;
+  transform: translateY(-10px) !important;
+}
+
+/* ✅ Animation fluide entre mode clair et mode sombre */
+body, .navbar, .card, .dropdown-menu, .modal-content {
+  transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out, border 0.4s ease-in-out;
+}
+
+/* ✅ Amélioration pour éviter un flash blanc lors du changement */
+html, body {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+/* ✅ Animation fluide sur la navbar */
+.navbar {
+  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+/* ✅ Effet de fondu au changement de mode */
+[data-bs-theme="dark"] body {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+
+/* ✅ Bootstrap Mode Sombre Adapté */
+[data-bs-theme="dark"] {
+  background-color: #121212 !important;
+  color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .card {
+  background-color: #222 !important;
+  border: 1px solid #444 !important;
+}
+
+[data-bs-theme="dark"] .card-title {
+  color: #ffcc00 !important; /* Jaune pour mieux ressortir */
+}
+
+[data-bs-theme="dark"] .pagination .page-link {
+  background-color: #333 !important;
+  color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .btn-light {
+  background-color: #ffffff !important;
+  color: #000 !important;
+}
+
+[data-bs-theme="dark"] .dropdown-menu {
+  background-color: #333 !important;
+  color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+  background-color: #333 !important;
+  color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .form-check-input:checked {
+  background-color: #ffffff !important;
+}
+
+/* ✅ Animation d'ouverture (zoom + slide) */
+@keyframes slideZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ✅ Animation de fermeture (dézoom progressif) */
+@keyframes slideZoomOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+/* ✅ Appliquer l'animation d'ouverture */
+.modal-content {
+  animation: slideZoomIn 0.4s ease-in-out;
+}
+
+/* ✅ Appliquer l'animation de fermeture */
+.modal-content.closing {
+  animation: slideZoomOut 0.3s ease-in-out;
+}
