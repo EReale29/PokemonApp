@@ -1,64 +1,59 @@
+// src/components/PokemonCard.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { getFavorites, addFavorite, removeFavorite } from "@/lib/firebaseFavorites";
+import React, { useState, useEffect } from "react";
+import { PokemonCardProps } from "@/utils/types";
 import { useSession } from "next-auth/react";
+import {fetchFavorites} from "@/utils/pokemonUtils"; // Importation de next-auth pour vérifier la connexion
 
-export default function PokemonCard({ pokemon, onClick }: { pokemon: any; onClick: () => void }) {
-    const { data: session } = useSession();
-    const userId = session?.user?.email || ""; // 🔥 Utilise l'email comme ID utilisateur
-    const [favorites, setFavorites] = useState<any[]>([]);
+const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onFavoriteClick, onCardClick }) => {
+    const { data: session } = useSession(); // Vérification de la session (connexion de l'utilisateur)
     const [isFavorite, setIsFavorite] = useState(false);
 
-    // ✅ Charger les favoris depuis Firebase au chargement
     useEffect(() => {
-        if (userId) {
-            getFavorites(userId).then(setFavorites);
-        }
-    }, [userId]);
+        const checkIfFavorite = async () => {
+            if (session && session.user?.id) {
+                const favorites = await fetchFavorites(session.user.id);  // Récupérer les favoris de l'utilisateur
+                const isPokemonFavorite = favorites.some(fav => fav.id === pokemon.id);  // Vérifie si ce Pokémon est dans les favoris
+                setIsFavorite(isPokemonFavorite); // Mettre à jour `isFavorite`
+            }
+        };
 
-    // ✅ Vérifier si le Pokémon est dans les favoris
-    useEffect(() => {
-        setIsFavorite(favorites.some((fav) => fav.pokemon.id === pokemon.id));
-    }, [favorites, pokemon]);
+        checkIfFavorite();
+    }, [session, pokemon.id]);
 
-    // ✅ Ajouter ou supprimer un favori
-    const toggleFavorite = async () => {
-        if (!userId) {
-            alert("Veuillez vous connecter pour ajouter un favori !");
+    // Gérer l'ajout ou le retrait des favoris
+    const handleFavoriteClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Empêche le clic d'être propagé à la carte
+
+        if (!session) {
+            console.log('test')
             return;
         }
 
-        if (isFavorite) {
-            const favoriteToRemove = favorites.find((fav) => fav.pokemon.id === pokemon.id);
-            if (favoriteToRemove) {
-                await removeFavorite(favoriteToRemove.id);
-            }
-        } else {
-            await addFavorite(userId, pokemon);
-        }
+        onFavoriteClick(); // Appelle la fonction de gestion des favoris
+        setIsFavorite(!isFavorite); // Change l'état du favori
+    };
 
-        const updatedFavorites = await getFavorites(userId);
-        setFavorites(updatedFavorites);
+    // Gérer le clic sur la carte pour afficher les détails du Pokémon
+    const handleCardClick = () => {
+        onCardClick();  // Appelle la fonction de gestion de la carte
     };
 
     return (
-        <div className="card mb-3 position-relative shadow-sm border-0" style={{ maxWidth: "18rem", cursor: "pointer" }} onClick={onClick}>
-            {/* ✅ Bouton étoile pour gérer les favoris */}
+        <div className="card mb-3" style={{ maxWidth: "18rem", cursor: "pointer" }} onClick={handleCardClick}>
             <button
                 className={`btn position-absolute top-0 end-0 m-2 ${isFavorite ? "text-warning" : "text-secondary"}`}
-                onClick={(e) => {
-                    e.stopPropagation(); // Empêche l'ouverture du modal
-                    toggleFavorite();
-                }}
+                onClick={handleFavoriteClick}
             >
                 {isFavorite ? "⭐" : "☆"}
             </button>
-
-            <div className="card-header text-center fw-bold">{pokemon.name}</div>
+            <div className="card-header text-center">{pokemon.name}</div>
             <div className="card-body text-center">
                 <img src={pokemon.image} alt={pokemon.name} className="img-fluid" />
             </div>
         </div>
     );
-}
+};
+
+export default PokemonCard;

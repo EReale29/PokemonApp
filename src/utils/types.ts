@@ -24,3 +24,40 @@ export const typeBadges: { [key: string]: string } = {
     "Fée": "bg-pink text-dark",
     "Tous": "bg-secondary text-white"
 };
+
+
+// Type représentant les types des Pokémon (ex : Feu, Eau, Plante, etc.)
+export interface PokemonType {
+    name: string;
+}
+
+// Type représentant les statistiques d'un Pokémon
+export interface PokemonStats {
+    HP: number;      // Points de vie
+    attack: number;  // Attaque
+    defense: number; // Défense
+    speed: number;   // Vitesse
+}
+
+// Type représentant un Pokémon avec ses propriétés
+export interface Pokemon {
+    id: number;            // Identifiant unique du Pokémon
+    name: string;          // Nom du Pokémon
+    image: string;         // URL de l'image du Pokémon
+    apiTypes: PokemonType[];  // Types du Pokémon (ex : "Feu", "Eau", etc.)
+    stats: PokemonStats;     // Statistiques du Pokémon
+}
+
+// Définition du type pour un favori, qui associe un Pokémon à un utilisateur
+export type Favorite = {
+    id: string;      // Identifiant unique du favori
+    pokemon: Pokemon; // Pokémon associé au favori
+    userId: string;   // Identifiant de l'utilisateur qui a ajouté ce Pokémon aux favoris
+};
+
+// Propriétés nécessaires pour le composant PokemonCard
+export interface PokemonCardProps {
+    pokemon: Pokemon;         // Pokémon à afficher
+    onFavoriteClick: () => void;  // Fonction appelée lors du clic sur l'icône de favori
+    onCardClick: () => void;      // Fonction appelée lors du clic sur la carte pour afficher les détails du Pokémon
+}

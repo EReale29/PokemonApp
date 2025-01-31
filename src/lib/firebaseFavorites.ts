@@ -1,35 +1,32 @@
+// src/lib/firestoreFavorite.ts
+
 import { db } from "@/lib/firebase";
-import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
+import { Pokemon } from "@/utils/types";
 
-// ✅ Ajouter un favori pour un utilisateur
-export async function addFavorite(userId: string, pokemon: any) {
-    try {
-        await addDoc(collection(db, "favorites"), {
-            userId,
-            pokemon,
-        });
-    } catch (error) {
-        console.error("🔥 Erreur lors de l'ajout du favori :", error);
-    }
-}
+// Ajouter un favori
+export const addFavorite = async (pokemon: Pokemon, userId: string) => {
+    const docRef = doc(db, "favorites", userId, "pokemons", pokemon.id.toString());
+    await setDoc(docRef, {
+        id: pokemon.id,
+        name: pokemon.name,
+        image: pokemon.image,
+    });
+};
 
-// ✅ Récupérer les favoris d'un utilisateur
-export async function getFavorites(userId: string) {
-    try {
-        const q = query(collection(db, "favorites"), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-        console.error("🔥 Erreur lors de la récupération des favoris :", error);
-        return [];
-    }
-}
+// Retirer un favori
+export const removeFavorite = async (pokemonId: number, userId: string) => {
+    const docRef = doc(db, "favorites", userId, "pokemons", pokemonId.toString());
+    await deleteDoc(docRef);
+};
 
-// ✅ Supprimer un favori
-export async function removeFavorite(favoriteId: string) {
-    try {
-        await deleteDoc(doc(db, "favorites", favoriteId));
-    } catch (error) {
-        console.error("🔥 Erreur lors de la suppression du favori :", error);
-    }
-}
+// Récupérer les favoris
+export const getFavorites = async (userId: string): Promise<Pokemon[]> => {
+    const pokemonsRef = collection(db, "favorites", userId, "pokemons");
+    const snapshot = await getDocs(pokemonsRef);
+    const favorites: Pokemon[] = [];
+    snapshot.forEach(doc => {
+        favorites.push(doc.data() as Pokemon);
+    });
+    return favorites;
+};

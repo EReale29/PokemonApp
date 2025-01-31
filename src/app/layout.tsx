@@ -1,22 +1,18 @@
-import { Metadata } from "next";
-import AuthSessionProvider from "@/components/SessionProvider";
+"use client";
+
+import { SessionProvider } from "next-auth/react"; // Import de SessionProvider
 import Navbar from "@/components/Navbar";
 import "@/styles/globals.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-
-export const metadata: Metadata = {
-    title: "Pokémon App",
-    description: "Liste des Pokémon avec Next.js et PokéBuild API",
-};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="fr">
         <body>
-        <AuthSessionProvider>
+        <SessionProvider>
             <Navbar />
             <main>{children}</main>
-        </AuthSessionProvider>
+        </SessionProvider>
         </body>
         </html>
     );

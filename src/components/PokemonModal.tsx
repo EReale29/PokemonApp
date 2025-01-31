@@ -1,14 +1,18 @@
-"use client";
-
 import React, { useState } from "react";
-import { typeBadges } from "@/utils/types";
+import { Pokemon } from "@/utils/types"; // Importer le type Pokemon
+import { typeBadges } from "@/utils/types"; // Assurez-vous que le chemin est correct
 
-export default function PokemonModal({ pokemon, onClose }: { pokemon: any; onClose: () => void }) {
+interface PokemonModalProps {
+    pokemon: Pokemon | null;  // Utiliser le type Pokemon pour pokemon
+    onClose: () => void;      // Fonction de fermeture
+}
+
+export default function PokemonModal({ pokemon, onClose }: PokemonModalProps) {
     const [isClosing, setIsClosing] = useState(false);
 
-    if (!pokemon) return null;
+    if (!pokemon) return null;  // Si pokemon est null, on retourne null
 
-    // ✅ Fonction pour déclencher l'animation de fermeture
+    // Fonction pour déclencher l'animation de fermeture
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(() => {
@@ -37,7 +41,7 @@ export default function PokemonModal({ pokemon, onClose }: { pokemon: any; onClo
 
                                 {/* Affichage des types avec des badges colorés */}
                                 <div className="mb-3">
-                                    {pokemon.apiTypes.map((type: any) => (
+                                    {pokemon.apiTypes.map((type) => (
                                         <span key={type.name} className={`badge ${typeBadges[type.name] || "bg-secondary"} mx-1`}>
                                             {type.name}
                                         </span>

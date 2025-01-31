@@ -4,25 +4,29 @@ import React, { useEffect, useState } from "react";
 import PokemonCard from "@/components/PokemonCard";
 import PokemonModal from "@/components/PokemonModal";
 import { fetchPokemonList } from "@/utils/api";
-import { pokemonTypes, typeBadges } from "@/utils/types"; // ✅ Import des types et badges
+import { pokemonTypes, typeBadges, Pokemon } from "@/utils/types"; // ✅ Import des types et badges
+import { useSession } from "next-auth/react"; // Pour vérifier la session de l'utilisateur
+import { filterPokemon, handleFavoriteClick, changePage } from "@/utils/pokemonUtils"; // ✅ Impor
 
 export default function HomePage() {
-    const [pokemonList, setPokemonList] = useState([]);
-    const [filteredPokemon, setFilteredPokemon] = useState([]);
-    const [selectedPokemon, setSelectedPokemon] = useState(null);
+    const { data: session } = useSession(); // Vérification de la session de l'utilisateur
+    const [pokemonList, setPokemonList] = useState<Pokemon[]>([]); // Définir le type pour pokemonList
+    const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]); // Définir le type pour filteredPokemon
+    const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null); // Définir le type pour selectedPokemon
+    const [favorites, setFavorites] = useState<Pokemon[]>([]); // Ajout des favoris avec le bon type
     const [currentPage, setCurrentPage] = useState(1);
-    const [searchTerm, setSearchTerm] = useState(""); // 🔎 Recherche par nom
-    const [selectedTypes, setSelectedTypes] = useState<string[]>([]); // 🔥 Filtrage multi-types
-    const [dropdownOpen, setDropdownOpen] = useState(false); // ✅ Gère l'ouverture du menu de filtrage
-    const [pageDropdownOpen, setPageDropdownOpen] = useState(false); // ✅ Gère l'ouverture du menu de pagination
-    const pokemonsPerPage = 12; // ✅ Nombre de Pokémon par page
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+    const pokemonsPerPage = 12;
 
     useEffect(() => {
         async function loadPokemon() {
             try {
                 const data = await fetchPokemonList();
-                setPokemonList(data);
-                setFilteredPokemon(data);
+                setPokemonList(data); // Typé correctement
+                setFilteredPokemon(data); // Typé correctement
             } catch (error) {
                 console.error(error);
             }
@@ -39,20 +43,7 @@ export default function HomePage() {
 
     // ✅ Filtrage des Pokémon en fonction du nom et des types
     useEffect(() => {
-        let filtered = pokemonList;
-
-        if (searchTerm) {
-            filtered = filtered.filter(pokemon =>
-                pokemon.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-
-        if (selectedTypes.length > 0) {
-            filtered = filtered.filter(pokemon =>
-                pokemon.apiTypes.some(type => selectedTypes.includes(type.name))
-            );
-        }
-
+        const filtered = filterPokemon(pokemonList, searchTerm, selectedTypes); // Utilisation de la fonction utilitaire
         setFilteredPokemon(filtered);
         setCurrentPage(1); // ✅ Réinitialiser la page après filtrage
     }, [searchTerm, selectedTypes, pokemonList]);
@@ -74,11 +65,8 @@ export default function HomePage() {
     const currentPokemons = filteredPokemon.slice(indexOfFirstPokemon, indexOfLastPokemon);
 
     // ✅ Changer de page
-    const changePage = (pageNumber: number) => {
-        if (pageNumber >= 1 && pageNumber <= totalPages) {
-            setCurrentPage(pageNumber);
-            setPageDropdownOpen(false); // ✅ Fermer le dropdown après sélection
-        }
+    const changePageHandler = (pageNumber: number) => {
+        changePage(pageNumber, setCurrentPage, totalPages); // Utilisation de la fonction utilitaire
     };
 
     return (
@@ -129,9 +117,13 @@ export default function HomePage() {
             {/* ✅ Affichage des Pokémon */}
             <div className="row">
                 {currentPokemons.length > 0 ? (
-                    currentPokemons.map((pokemon: any) => (
+                    currentPokemons.map((pokemon: Pokemon) => (
                         <div key={pokemon.id} className="col-md-3">
-                            <PokemonCard pokemon={pokemon} onClick={() => setSelectedPokemon(pokemon)} />
+                            <PokemonCard
+                                pokemon={pokemon}
+                                onFavoriteClick={() => handleFavoriteClick(pokemon, favorites, setFavorites, session)}  // Pour ajouter/retirer des favoris
+                                onCardClick={() => setSelectedPokemon(pokemon)}      // Pour afficher les détails
+                            />
                         </div>
                     ))
                 ) : (
@@ -143,14 +135,11 @@ export default function HomePage() {
             {totalPages > 1 && (
                 <nav className="d-flex justify-content-center mt-4">
                     <ul className="pagination">
-                        {/* Bouton Précédent */}
                         <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                            <button className="page-link" onClick={() => changePage(currentPage - 1)}>
+                            <button className="page-link" onClick={() => changePageHandler(currentPage - 1)}>
                                 Précédent
                             </button>
                         </li>
-
-                        {/* ✅ Dropdown de pagination qui s'ouvre vers le haut */}
                         <li className="page-item dropup">
                             <button
                                 className="page-link dropdown-toggle"
@@ -165,7 +154,7 @@ export default function HomePage() {
                                         <li key={i + 1}>
                                             <button
                                                 className={`dropdown-item ${currentPage === i + 1 ? "active" : ""}`}
-                                                onClick={() => changePage(i + 1)}
+                                                onClick={() => changePageHandler(i + 1)}
                                             >
                                                 Page {i + 1}
                                             </button>
@@ -174,10 +163,8 @@ export default function HomePage() {
                                 </ul>
                             )}
                         </li>
-
-                        {/* Bouton Suivant */}
                         <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                            <button className="page-link" onClick={() => changePage(currentPage + 1)}>
+                            <button className="page-link" onClick={() => changePageHandler(currentPage + 1)}>
                                 Suivant
                             </button>
                         </li>
