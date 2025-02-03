@@ -44,6 +44,7 @@ export default function Navbar() {
                         <ul className="navbar-nav me-auto">
                             <li className="nav-item"><Link className="nav-link" href="/">Accueil</Link></li>
                             <li className="nav-item"><Link className="nav-link" href="/favorites">Favoris</Link></li>
+                            <li className="nav-item"><Link className="nav-link" href="/contact">Nous Contacter</Link></li>
                         </ul>
 
                         {/* ✅ Toggle Mode Sombre */}
@@ -58,8 +59,20 @@ export default function Navbar() {
                                 <span>Chargement...</span>
                             ) : session ? (
                                 <>
-                                    <span className="navbar-text me-3">Bienvenue, {session.user?.name}!</span>
-                                    <button className="btn btn-light" onClick={() => signOut()}>Déconnexion</button>
+                                    <div className="nav-item dropdown">
+                                        <button className="btn btn-light dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            {session.user?.name || "Profil"}
+                                        </button>
+                                        <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                                            <li className="dropdown-item"><Link className="nav-link" href="/profile">Mon Profil</Link></li>
+                                            <li><hr className="dropdown-divider" /></li>
+                                            <li className="dropdown-item"><Link className="nav-link" href="/team">Mon Équipe</Link></li>
+                                            <li><hr className="dropdown-divider" /></li>
+                                            <li className="dropdown-item"><Link className="nav-link" href="/favorites">Favoris</Link></li>
+                                            <li><hr className="dropdown-divider" /></li>
+                                            <li><button className="dropdown-item" onClick={() => signOut()}>Déconnexion</button></li>
+                                        </ul>
+                                    </div>
                                 </>
                             ) : (
                                 <button className="btn btn-light" onClick={() => setShowModal(true)}>Se connecter</button>

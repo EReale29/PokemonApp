@@ -1,179 +1,115 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import PokemonCard from "@/components/PokemonCard";
-import PokemonModal from "@/components/PokemonModal";
+import PokemonCard from "@/components/PokemonCard"; // Import de votre composant PokemonCard
+import PokemonModal from "@/components/PokemonModal"; // Import du modal
 import { fetchPokemonList } from "@/utils/api";
-import { pokemonTypes, typeBadges, Pokemon } from "@/utils/types"; // ✅ Import des types et badges
+import { Pokemon } from "@/utils/types"; // ✅ Import des types et badges
 import { useSession } from "next-auth/react"; // Pour vérifier la session de l'utilisateur
-import { filterPokemon, handleFavoriteClick, changePage } from "@/utils/pokemonUtils"; // ✅ Impor
+import { filterPokemon, handleFavoriteClick, changePage } from "@/utils/pokemonUtils"; // ✅
+import SearchBar from "@/components/SearchBar";
+import Pagination from "@/components/Pagination";
 
 export default function HomePage() {
     const { data: session } = useSession(); // Vérification de la session de l'utilisateur
-    const [pokemonList, setPokemonList] = useState<Pokemon[]>([]); // Définir le type pour pokemonList
-    const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]); // Définir le type pour filteredPokemon
-    const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null); // Définir le type pour selectedPokemon
-    const [favorites, setFavorites] = useState<Pokemon[]>([]); // Ajout des favoris avec le bon type
-    const [currentPage, setCurrentPage] = useState(1);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
-    const pokemonsPerPage = 12;
-
-    useEffect(() => {
-        async function loadPokemon() {
-            try {
-                const data = await fetchPokemonList();
-                setPokemonList(data); // Typé correctement
-                setFilteredPokemon(data); // Typé correctement
-            } catch (error) {
-                console.error(error);
-            }
-        }
-        loadPokemon();
-    }, []);
-
-    // ✅ Gestion des types sélectionnés
-    const handleTypeChange = (type: string) => {
-        setSelectedTypes((prev) =>
-            prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-        );
-    };
-
-    // ✅ Filtrage des Pokémon en fonction du nom et des types
-    useEffect(() => {
-        const filtered = filterPokemon(pokemonList, searchTerm, selectedTypes); // Utilisation de la fonction utilitaire
-        setFilteredPokemon(filtered);
-        setCurrentPage(1); // ✅ Réinitialiser la page après filtrage
-    }, [searchTerm, selectedTypes, pokemonList]);
-
-    // ✅ Toggle Dropdown (Filtrage par types)
-    const toggleDropdown = () => {
-        setDropdownOpen(!dropdownOpen);
-    };
-
-    // ✅ Toggle Dropdown (Pagination)
-    const togglePageDropdown = () => {
-        setPageDropdownOpen(!pageDropdownOpen);
-    };
-
-    // ✅ Pagination
+    const [pokemonList, setPokemonList] = useState<Pokemon[]>([]); // Liste des Pokémon
+    const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]); // Pokémon filtrés
+    const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null); // Pokémon sélectionné pour afficher ses détails
+    const [favorites, setFavorites] = useState<Pokemon[]>([]); // Liste des favoris
+    const [currentPage, setCurrentPage] = useState(1); // Page courante pour la pagination
+    const [searchTerm] = useState(""); // Terme de recherche
+    const [selectedTypes] = useState<string[]>([]); // Types sélectionnés pour filtrer
+    const [loading, setLoading] = useState(true); // État de chargement
+    const pokemonsPerPage = 12; // Nombre de pokémons par page
+    // Calcul des pages pour la pagination
     const totalPages = Math.ceil(filteredPokemon.length / pokemonsPerPage);
     const indexOfLastPokemon = currentPage * pokemonsPerPage;
     const indexOfFirstPokemon = indexOfLastPokemon - pokemonsPerPage;
     const currentPokemons = filteredPokemon.slice(indexOfFirstPokemon, indexOfLastPokemon);
 
-    // ✅ Changer de page
-    const changePageHandler = (pageNumber: number) => {
-        changePage(pageNumber, setCurrentPage, totalPages); // Utilisation de la fonction utilitaire
+    // Gérer la recherche
+    const handleSearchChange = (searchTerm: string) => {
+        const filtered = filterPokemon(pokemonList, searchTerm, []);
+        setFilteredPokemon(filtered);
+        setCurrentPage(1); // Réinitialiser la page après une recherche
     };
+
+    // Gérer le changement de types
+    const handleTypeChange = (selectedTypes: string[]) => {
+        const filtered = filterPokemon(pokemonList, "", selectedTypes);
+        setFilteredPokemon(filtered);
+        setCurrentPage(1); // Réinitialiser la page après un changement de type
+    };
+
+    // Fonction pour charger les Pokémon
+    useEffect(() => {
+        async function loadPokemon() {
+            try {
+                setLoading(true); // Lancer le chargement
+                const data = await fetchPokemonList(); // Charger les données des Pokémon
+                setPokemonList(data); // Mettre à jour la liste des Pokémon
+                setFilteredPokemon(data); // Mettre à jour les Pokémon filtrés
+            } catch (error) {
+                console.error("Erreur lors du chargement des Pokémon:", error);
+            } finally {
+                setLoading(false); // Fin du chargement
+            }
+        }
+
+        loadPokemon(); // Appel de la fonction pour charger les Pokémon
+    }, []);
+
+
+
+    // Filtrage des Pokémon en fonction du nom et des types
+    useEffect(() => {
+        const filtered = filterPokemon(pokemonList, searchTerm, selectedTypes); // Utilisation de la fonction utilitaire
+        setFilteredPokemon(filtered); // Mettre à jour les Pokémon filtrés
+        setCurrentPage(1); // Réinitialiser la page après filtrage
+    }, [searchTerm, selectedTypes, pokemonList]);
+
+
 
     return (
         <div className="container mt-4">
             <h1 className="text-center title mb-4">Liste des Pokémon</h1>
 
-            {/* ✅ Barre de recherche et Filtrage */}
-            <div className="d-flex justify-content-center gap-3 mb-3">
-                {/* Champ de recherche */}
-                <input
-                    type="text"
-                    className="form-control w-50"
-                    placeholder="Rechercher un Pokémon..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-
-                {/* Dropdown pour filtrer par type avec checkboxes */}
-                <div className="dropdown">
-                    <button
-                        className="btn btn-light dropdown-toggle"
-                        type="button"
-                        onClick={toggleDropdown}
-                    >
-                        Filtrer par type
-                    </button>
-                    {dropdownOpen && (
-                        <div className="dropdown-menu show p-3" style={{ maxHeight: "300px", overflowY: "auto" }}>
-                            {pokemonTypes.slice(1).map((type) => (
-                                <div key={type} className="form-check">
-                                    <input
-                                        className="form-check-input"
-                                        type="checkbox"
-                                        id={`type-${type}`}
-                                        checked={selectedTypes.includes(type)}
-                                        onChange={() => handleTypeChange(type)}
-                                    />
-                                    <label className={`form-check-label badge ${typeBadges[type] || "bg-secondary text-white"}`} htmlFor={`type-${type}`}>
-                                        {type}
-                                    </label>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+            {/* Affichage du loader pendant le chargement */}
+            {loading ? (
+                <div className="text-center">
+                    {/* Vous pouvez ajouter un spinner ici */}
+                    <div className="loader"></div>
+                    <p>Chargement des Pokémon...</p>
                 </div>
-            </div>
+            ) : (
+                <>
+                    {/* Barre de recherche et filtrage */}
+                    <SearchBar onSearchChange={handleSearchChange} onTypeChange={handleTypeChange} />
 
-            {/* ✅ Affichage des Pokémon */}
-            <div className="row">
-                {currentPokemons.length > 0 ? (
-                    currentPokemons.map((pokemon: Pokemon) => (
-                        <div key={pokemon.id} className="col-md-3">
-                            <PokemonCard
-                                pokemon={pokemon}
-                                onFavoriteClick={() => handleFavoriteClick(pokemon, favorites, setFavorites, session)}  // Pour ajouter/retirer des favoris
-                                onCardClick={() => setSelectedPokemon(pokemon)}      // Pour afficher les détails
-                            />
-                        </div>
-                    ))
-                ) : (
-                    <p className="text-center">Aucun Pokémon trouvé</p>
-                )}
-            </div>
+                    {/* ✅ Affichage des Pokémon */}
+                    <div className="row">
+                        {currentPokemons.length > 0 ? (
+                            currentPokemons.map((pokemon: Pokemon) => (
+                                <div key={pokemon.id} className="col-md-3">
+                                    <PokemonCard
+                                        pokemon={pokemon}
+                                        onFavoriteClick={() => handleFavoriteClick(pokemon, favorites, setFavorites, session)}
+                                        onCardClick={() => setSelectedPokemon(pokemon)}
+                                    />
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-center">Aucun Pokémon trouvé</p>
+                        )}
+                    </div>
 
-            {/* ✅ Pagination avec Dropdown */}
-            {totalPages > 1 && (
-                <nav className="d-flex justify-content-center mt-4">
-                    <ul className="pagination">
-                        <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                            <button className="page-link" onClick={() => changePageHandler(currentPage - 1)}>
-                                Précédent
-                            </button>
-                        </li>
-                        <li className="page-item dropup">
-                            <button
-                                className="page-link dropdown-toggle"
-                                type="button"
-                                onClick={togglePageDropdown}
-                            >
-                                Page {currentPage} / {totalPages}
-                            </button>
-                            {pageDropdownOpen && (
-                                <ul className="dropdown-menu show" style={{ maxHeight: "200px", overflowY: "auto" }}>
-                                    {Array.from({ length: totalPages }, (_, i) => (
-                                        <li key={i + 1}>
-                                            <button
-                                                className={`dropdown-item ${currentPage === i + 1 ? "active" : ""}`}
-                                                onClick={() => changePageHandler(i + 1)}
-                                            >
-                                                Page {i + 1}
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </li>
-                        <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                            <button className="page-link" onClick={() => changePageHandler(currentPage + 1)}>
-                                Suivant
-                            </button>
-                        </li>
-                    </ul>
-                </nav>
+                    {/* ✅ Pagination avec Dropdown */}
+                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage}/>
+
+                    {/* ✅ Affichage du modal si un Pokémon est sélectionné */}
+                    {selectedPokemon && <PokemonModal pokemon={selectedPokemon} onCloseAction={() => setSelectedPokemon(null)} />}
+                </>
             )}
-
-            {/* ✅ Affichage du modal si un Pokémon est sélectionné */}
-            {selectedPokemon && <PokemonModal pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />}
         </div>
     );
 }

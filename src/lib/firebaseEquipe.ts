@@ -16,6 +16,7 @@ export const addEquipe = async (pokemon: Pokemon, userId: string) => {
     // Ajouter le Pokémon à l'équipe
     await setDoc(doc(equipeRef, pokemon.id.toString()), {
         id: pokemon.id,
+        nickname: pokemon.nickname || pokemon.name, // Si `pokemon.nickname` existe, on l'utilise, sinon on utilise `pokemon.name`
         name: pokemon.name,
         image: pokemon.image,
     });
@@ -26,6 +27,12 @@ export const removeEquipe = async (pokemonId: number, userId: string) => {
     const docRef = doc(db, "equipe", userId, "pokemons", pokemonId.toString());
     await deleteDoc(docRef);
 };
+
+export const updateEquipe = async (pokemon: Pokemon, id: string) => {
+    removeEquipe(pokemon.id, id);
+    addEquipe(pokemon, id);
+}
+
 
 // Récupérer l'équipe de Pokémon
 export const getEquipe = async (userId: string): Promise<Pokemon[]> => {

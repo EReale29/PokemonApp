@@ -1,0 +1,42 @@
+@keyframes fadeIn {
+    from {
+        opacity: 0.8;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ✅ Animation d'ouverture (zoom + slide) */
+@keyframes slideZoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ✅ Animation de fermeture (dézoom progressif) */
+@keyframes slideZoomOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+/* ✅ Appliquer l'animation d'ouverture */
+.modal-content {
+    animation: slideZoomIn 0.4s ease-in-out;
+}
+
+/* ✅ Appliquer l'animation de fermeture */
+.modal-content.closing {
+    animation: slideZoomOut 0.3s ease-in-out;
+}

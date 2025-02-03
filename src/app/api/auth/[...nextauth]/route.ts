@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import { NextApiRequest, NextApiResponse } from "next";
-import { Session, User } from "next-auth"; // Import des types Session et User
+import { Session } from "next-auth"; // Import des types Session et User
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { firebaseApp } from "@/lib/firebase"; // Assurez-vous que vous avez bien configuré Firebase
 import { JWT } from "next-auth/jwt";

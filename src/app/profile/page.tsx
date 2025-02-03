@@ -1,70 +1,25 @@
+// app/profile/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useSession } from "next-auth/react"; // Pour récupérer les infos de l'utilisateur
 
 export default function ProfilePage() {
-    const router = useRouter();
-    const user = auth.currentUser;
-    const [displayName, setDisplayName] = useState("");
-    const [email, setEmail] = useState("");
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!user) {
-            router.push("/"); // Redirige si l'utilisateur n'est pas connecté
-            return;
-        }
-
-        const loadUserData = async () => {
-            const userRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(userRef);
-
-            if (docSnap.exists()) {
-                setDisplayName(docSnap.data().displayName);
-                setEmail(docSnap.data().email);
-            }
-            setLoading(false);
-        };
-
-        loadUserData();
-    }, [user, router]);
-
-    const handleSave = async () => {
-        if (!user) return;
-        const userRef = doc(db, "users", user.uid);
-        await setDoc(userRef, { displayName, email }, { merge: true });
-        alert("Informations mises à jour !");
-    };
-
-    if (loading) return <p>Chargement...</p>;
+    const { data: session } = useSession(); // Récupère la session de l'utilisateur
 
     return (
         <div className="container mt-5">
-            <h2 className="mb-4">Profil Utilisateur</h2>
-            <div className="mb-3">
-                <label className="form-label">Nom d'affichage</label>
-                <input
-                    type="text"
-                    className="form-control"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                />
-            </div>
-            <div className="mb-3">
-                <label className="form-label">Email</label>
-                <input
-                    type="email"
-                    className="form-control"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-            </div>
-            <button className="btn btn-primary" onClick={handleSave}>
-                Enregistrer
-            </button>
+            <h2 className="text-center mb-4">Mon Profil</h2>
+
+            {session ? (
+                <div>
+                    <p><strong>Nom:</strong> {session.user?.name}</p>
+                    <p><strong>Email:</strong> {session.user?.email}</p>
+                    {/* Vous pouvez ajouter d'autres informations ici */}
+                </div>
+            ) : (
+                <p>Veuillez vous connecter pour voir votre profil.</p>
+            )}
         </div>
     );
 }

@@ -11,6 +11,8 @@ export const addFavorite = async (pokemon: Pokemon, userId: string) => {
         id: pokemon.id,
         name: pokemon.name,
         image: pokemon.image,
+        apiTypes: pokemon.apiTypes,
+        stats: pokemon.stats,
     });
 };
 

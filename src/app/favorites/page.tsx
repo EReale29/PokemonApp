@@ -1,52 +1,121 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import PokemonCard from "@/components/PokemonCard"; // Import de votre composant PokemonCard
-import { handleFavoriteClick } from "@/utils/pokemonUtils";
+import { Pokemon } from "@/utils/types";
+import PokemonCard from "@/components/PokemonCard";
+import { filterPokemon, handleFavoriteClick } from "@/utils/pokemonUtils";
 import PokemonModal from "@/components/PokemonModal";
-import { useSession } from "next-auth/react"; // Import des fonctions utilitaires
-import { fetchFavorites } from "@/utils/pokemonUtils"; // Import de la fonction pour récupérer les favoris
+import { useSession } from "next-auth/react";
+import { fetchFavorites } from "@/utils/pokemonUtils";
+import SearchBar from "@/components/SearchBar";
+import Pagination from "@/components/Pagination";
 
 export default function FavoritesPage() {
-    const { data: session } = useSession(); // Vérification de la session de l'utilisateur
-    console.log(session);
-    const [favorites, setFavorites] = useState<any[]>([]); // Liste des favoris
-    const [selectedPokemon, setSelectedPokemon] = useState<any | null>(null); // Pokémon sélectionné pour afficher ses détails
+    const { data: session } = useSession();
+    const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
+    const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]);
+    const [favorites, setFavorites] = useState<Pokemon[]>([]);
+    const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [loading, setLoading] = useState(true); // État de chargement
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]); // Types sélectionnés pour filtrer
+    const pokemonsPerPage = 12;
 
-    // Charger les favoris depuis Firestore dès que la session change
+    const totalPages = Math.ceil(filteredPokemon.length / pokemonsPerPage);
+    const indexOfLastPokemon = currentPage * pokemonsPerPage;
+    const indexOfFirstPokemon = indexOfLastPokemon - pokemonsPerPage;
+    const currentPokemons = filteredPokemon.slice(indexOfFirstPokemon, indexOfLastPokemon);
+
+
     useEffect(() => {
-        if (session?.user?.id) {
-            const loadFavorites = async () => {
-                const userFavorites = await fetchFavorites(session.user.id); // Utilise l'ID utilisateur pour récupérer les favoris
-                setFavorites(userFavorites);
-            };
-            loadFavorites();
+        async function loadFavorites() {
+            if (session?.user?.id) {
+                setLoading(true);
+                const userFavorites = await fetchFavorites(session.user.id);
+
+                // Trier les favoris par ID
+                const sortedFavorites = userFavorites.sort((a, b) => a.id - b.id);
+
+                setFavorites(sortedFavorites);
+                setFilteredPokemon(sortedFavorites); // ✅ Met à jour les Pokémon filtrés
+                setLoading(false);
+            }
         }
+
+        loadFavorites();
     }, [session]);
+
+    useEffect(() => {
+        setFilteredPokemon(filterPokemon(favorites, searchTerm, selectedTypes));
+    }, [favorites, searchTerm, selectedTypes]);
+
+
+    // Gérer la recherche
+    const handleSearchChange = (searchTerm: string) => {
+        setSearchTerm(searchTerm);
+        const filtered = filterPokemon(favorites, searchTerm, selectedTypes);
+        setFilteredPokemon(filtered);
+        setCurrentPage(1);
+    };
+
+    // Gérer les types sélectionnés
+    const handleTypeChange = (selectedTypes: string[]) => {
+        const filtered = filterPokemon(favorites, searchTerm, selectedTypes);
+        setFilteredPokemon(filtered);
+        setCurrentPage(1);
+    };
+
 
     return (
         <div className="container mt-5">
             <h2 className="text-center mb-4">⭐ Mes Pokémon Favoris</h2>
 
-            {/* Liste des Pokémon favoris */}
-            <div className="row">
-                {favorites.length > 0 ? (
-                    favorites.map((fav) => (
-                        <div key={fav.id} className="col-md-4">
-                            <PokemonCard
-                                pokemon={fav} // Passe les données du Pokémon à afficher
-                                onFavoriteClick={() => handleFavoriteClick(fav, favorites, setFavorites, session)} // Ajoute ou retire du favori
-                                onCardClick={() => setSelectedPokemon(fav)} // Ouvre le modal pour afficher les détails
-                            />
-                        </div>
-                    ))
-                ) : (
-                    <p className="text-center">Aucun favori pour l'instant.</p> // Affiche un message si aucun favori
-                )}
-            </div>
+            {/* Affichage du loader pendant le chargement */}
+            {loading ? (
+                <div className="text-center">
+                    {/* Vous pouvez ajouter un spinner ici */}
+                    <div className="loader"></div>
+                    <p>Chargement des Pokémon...</p>
+                </div>
+            ) : (
+                <>
 
-            {/* ✅ Affichage du modal si un Pokémon est sélectionné */}
-            {selectedPokemon && <PokemonModal pokemon={selectedPokemon} onClose={() => setSelectedPokemon(null)} />}
+                    {/* Recherche et filtrage */}
+                    <SearchBar onSearchChange={handleSearchChange} onTypeChange={handleTypeChange} />
+
+                    {/* ✅ Affichage des Pokémon */}
+                    <div className="row">
+                        {currentPokemons.length > 0 ? (
+                            currentPokemons.map((pokemon: Pokemon) => (
+                                <div key={pokemon.id} className="col-md-3">
+                                    <PokemonCard
+                                        pokemon={pokemon}
+                                        onFavoriteClick={() => handleFavoriteClick(pokemon, favorites, setFavorites, session)}
+                                        onCardClick={() => setSelectedPokemon(pokemon)}
+                                    />
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-center">Aucun Pokémon trouvé</p>
+                        )}
+                    </div>
+
+                    {/* Pagination */}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+
+                    {/* Affichage du modal si un Pokémon est sélectionné */}
+                    {selectedPokemon && (
+                        <PokemonModal
+                            pokemon={selectedPokemon}
+                            onCloseAction={() => setSelectedPokemon(null)}
+                        />)}
+                </>
+                )}
         </div>
     );
 }

@@ -1,0 +1,22 @@
+/* Effet hover amélioré pour la Navbar */
+.navbar-nav .nav-link {
+    transition: color 0.3s ease-in-out, background-color 0.3s ease-in-out;
+}
+
+.navbar-nav .nav-link.hover-effect:hover {
+    color: white !important;
+    background-color: black !important;
+    border-radius: 5px;
+}
+
+/* ✅ Animation fluide sur la navbar */
+.navbar {
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+/* Dropdown pour ouvrir vers le haut */
+.dropup .dropdown-menu {
+    top: auto !important;
+    bottom: 100% !important;
+    transform: translateY(-10px) !important;
+}
