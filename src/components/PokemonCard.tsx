@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { PokemonCardProps } from "@/utils/types";
 import { useSession } from "next-auth/react";
 import { fetchFavorites } from "@/utils/pokemonUtils";
+import Image from "next/image";
 
 const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onFavoriteClick, onCardClick }) => {
     const { data: session } = useSession(); // Vérification de la session (connexion de l'utilisateur)
@@ -59,7 +60,15 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onFavoriteClick, onC
             </button>
             <div className="card-header text-center">{pokemon.name}</div>
             <div className="card-body text-center">
-                <img src={pokemon.image} alt={pokemon.name} className="img-fluid" />
+                <div className="image-container">
+                    <Image
+                        src={pokemon.image}
+                        alt={pokemon.name}
+                        width={300}       // Dimensions de référence
+                        height={300}
+                        className="img-fluid"
+                    />
+                </div>
             </div>
         </div>
     );

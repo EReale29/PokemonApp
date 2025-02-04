@@ -3,6 +3,7 @@ import { Pokemon } from "@/utils/types"; // Assurez-vous que le chemin est corre
 import { typeBadges } from "@/utils/types";
 import { handleEquipeClick, fetchEquipe } from "@/utils/pokemonUtils";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 interface PokemonModalProps {
     pokemon: Pokemon | null;
@@ -13,7 +14,7 @@ export default function PokemonModal({ pokemon, onCloseAction }: PokemonModalPro
     const [isClosing, setIsClosing] = useState(false);
     const [equipped, setEquipped] = useState(false);
     const { data: session } = useSession();
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [equipe, setEquipe] = useState<Pokemon[]>([]);
     const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +49,9 @@ export default function PokemonModal({ pokemon, onCloseAction }: PokemonModalPro
                 console.error("Erreur lors de l'ajout/retrait du Pokémon :", err);
                 setError("Erreur lors de l'ajout/retrait du Pokémon.");
             }
+        } else {
+            alert("Veuillez vous connecter pour ajouter un pokemon a l'equipe !");
+            return;
         }
     };
 
@@ -84,9 +88,11 @@ export default function PokemonModal({ pokemon, onCloseAction }: PokemonModalPro
                             <div className="row">
                                 {/* Image du Pokémon à gauche */}
                                 <div className="col-md-4 text-center">
-                                    <img
+                                    <Image
                                         src={pokemon.image}
                                         alt={pokemon.name}
+                                        width={300}       // Définissez la largeur souhaitée (en pixels)
+                                        height={300}      // Définissez la hauteur souhaitée (en pixels)
                                         className="img-fluid rounded"
                                     />
                                 </div>

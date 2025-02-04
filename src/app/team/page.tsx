@@ -6,12 +6,12 @@ import { Pokemon } from "@/utils/types";
 import { deleteEquipe, updateEquipe } from "@/lib/firebaseEquipe";
 import NotConnected from "@/components/NotConnected";
 import { useUserData } from "@/context/UserDataContext";
+import Image from "next/image";
 
 export default function Team() {
     const { data: session } = useSession();
     // Utiliser les données du contexte pour l'équipe
     const { team, reloadTeam } = useUserData();
-
     // Utilisation d'états locaux pour la gestion du chargement, des erreurs, de la modale, etc.
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -91,11 +91,13 @@ export default function Team() {
                             <div key={pokemon.id} className="col-md-6 mb-3">
                                 <div className="card">
                                     <div className="card-body d-flex">
-                                        <img
+                                        <Image
                                             src={pokemon.image}
-                                            className="img-fluid rounded me-3"
                                             alt={pokemon.name}
+                                            width={150}
+                                            height={300}
                                             style={{ width: "150px", height: "auto" }}
+                                            className="img-fluid rounded me-3"
                                         />
                                         <div className="d-flex flex-column">
                                             <h5 className="card-title">{pokemon.name}</h5>

@@ -22,6 +22,23 @@
   }
 }
 
+/* Exemple de media query pour les écrans de moins de 576px */
+@media (max-width: 575.98px) {
+  .title {
+    font-size: 1.5rem;
+  }
+  .card {
+    margin: 0.5rem;
+  }
+}
+
+/* Exemple pour les écrans plus grands */
+@media (min-width: 576px) {
+  .title {
+    font-size: 2rem;
+  }
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
