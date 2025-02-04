@@ -2,31 +2,33 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { fetchEquipe } from "@/utils/pokemonUtils";
 import { Pokemon } from "@/utils/types";
 import { deleteEquipe, updateEquipe } from "@/lib/firebaseEquipe";
 import NotConnected from "@/components/NotConnected";
+import { useUserData } from "@/context/UserDataContext";
 
 export default function Team() {
     const { data: session } = useSession();
-    const [team, setTeam] = useState<Pokemon[]>([]);
+    // Utiliser les données du contexte pour l'équipe
+    const { team, reloadTeam } = useUserData();
+
+    // Utilisation d'états locaux pour la gestion du chargement, des erreurs, de la modale, etc.
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showConfirm, setShowConfirm] = useState(false);
     const [pokemonToRemove, setPokemonToRemove] = useState<Pokemon | null>(null);
-    const [reloadTeam, setReloadTeam] = useState(false);
 
-    // Charger l'équipe avec gestion d'erreurs
+    // Charger l'équipe depuis Firestore avec gestion des erreurs
     useEffect(() => {
         async function loadEquipe() {
             if (session?.user?.id) {
                 setLoading(true);
-                setError(null); // Réinitialise l'erreur avant le chargement
+                setError(null);
                 try {
-                    const equipe = await fetchEquipe(session.user.id);
-                    setTeam(equipe);
+                    // reloadTeam est une fonction du contexte pour rafraîchir les données
+                    await reloadTeam();
                 } catch (err: any) {
-                    console.error("Erreur lors du chargement de l'équipe:", err);
+                    console.error("Erreur lors du chargement de l'équipe :", err);
                     setError("Erreur lors du chargement de l'équipe. Veuillez réessayer.");
                 } finally {
                     setLoading(false);
@@ -41,12 +43,11 @@ export default function Team() {
         if (pokemonToRemove && session?.user?.id) {
             try {
                 await deleteEquipe(pokemonToRemove.id, session.user.id);
-                // Optionnel : mettre à jour localement le state
-                setTeam(team.filter(pokemon => pokemon.id !== pokemonToRemove.id));
                 setShowConfirm(false);
-                setReloadTeam(prev => !prev);
+                // Rafraîchir l'équipe via le contexte
+                await reloadTeam();
             } catch (err: any) {
-                console.error("Erreur lors de la suppression de ce Pokémon:", err);
+                console.error("Erreur lors de la suppression de ce Pokémon :", err);
                 alert("Erreur lors de la suppression. Veuillez réessayer.");
             }
         }
@@ -58,9 +59,10 @@ export default function Team() {
             try {
                 const updatedPokemon = { ...pokemon, nickname };
                 await updateEquipe(updatedPokemon, session.user.id);
-                setReloadTeam(prev => !prev);
+                // Rafraîchir l'équipe via le contexte
+                await reloadTeam();
             } catch (err: any) {
-                console.error("Erreur lors de l'ajout du surnom:", err);
+                console.error("Erreur lors de l'ajout du surnom :", err);
                 alert("Erreur lors de l'ajout du surnom. Veuillez réessayer.");
             }
         }

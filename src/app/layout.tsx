@@ -1,6 +1,7 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
+import { UserDataProvider } from "@/context/UserDataContext";
 import Navbar from "@/components/Navbar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import "@/styles/globals.css";
@@ -13,8 +14,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body>
         <SessionProvider>
             <ErrorBoundary>
+                <UserDataProvider>
                 <Navbar />
                 <main>{children}</main>
+                </UserDataProvider>
             </ErrorBoundary>
         </SessionProvider>
         </body>
