@@ -1,14 +1,17 @@
 'use client';
-import { useRouter } from 'next/router';
+
+import { useSearchParams } from 'next/navigation';
 
 const ErrorPage = () => {
-    const router = useRouter();
-    const { error } = router.query;
+    const searchParams = useSearchParams();
+    const error = searchParams.get('error');
 
     return (
-        <div>
-            <h1>Erreur de Connexion</h1>
-            <p>{error}</p>
+        <div className="container mt-5">
+            <h1 className="text-center">Erreur de Connexion</h1>
+            <p className="text-center">
+                {error || "Une erreur inconnue est survenue. Veuillez réessayer ultérieurement."}
+            </p>
         </div>
     );
 };

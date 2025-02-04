@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { pokemonTypes, typeBadges } from "@/utils/types"; // Import des types
+import { pokemonTypes, typeBadges } from "@/utils/types"; // Import des types et des badges
 
 interface SearchBarProps {
     onSearchChange: (searchTerm: string) => void;
@@ -11,20 +11,20 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearchChange, onTypeChange }) =
     const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
-    // Gérer la recherche
+    // Gérer le changement dans le champ de recherche
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newSearchTerm = e.target.value;
         setSearchTerm(newSearchTerm);
-        onSearchChange(newSearchTerm); // Passer la valeur au parent
+        onSearchChange(newSearchTerm);
     };
 
-    // Gérer le changement de type
+    // Gérer la sélection/désélection d'un type
     const handleTypeChange = (type: string) => {
         const newSelectedTypes = selectedTypes.includes(type)
             ? selectedTypes.filter((t) => t !== type)
             : [...selectedTypes, type];
         setSelectedTypes(newSelectedTypes);
-        onTypeChange(newSelectedTypes); // Passer la sélection au parent
+        onTypeChange(newSelectedTypes);
     };
 
     return (
@@ -38,7 +38,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearchChange, onTypeChange }) =
                 onChange={handleSearchChange}
             />
 
-            {/* Dropdown pour filtrer par type avec checkboxes */}
+            {/* Dropdown pour filtrer par type */}
             <div className="dropdown">
                 <button
                     className="btn btn-light dropdown-toggle"
@@ -49,7 +49,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearchChange, onTypeChange }) =
                     Filtrer par type
                 </button>
                 {dropdownOpen && (
-                    <div className="dropdown-menu show p-3" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                    <div
+                        className="dropdown-menu show p-3"
+                        style={{ maxHeight: "300px", overflowY: "auto" }}
+                    >
                         {pokemonTypes.slice(1).map((type) => (
                             <div key={type} className="form-check">
                                 <input

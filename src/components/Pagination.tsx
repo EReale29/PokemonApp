@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 
 interface PaginationProps {
@@ -8,6 +10,7 @@ interface PaginationProps {
 
 const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false); // Gestion de l'état du dropdown
+
 
     const handlePageChange = (page: number) => {
         if (page > 0 && page <= totalPages) {
@@ -44,7 +47,10 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
                             Page {currentPage} / {totalPages}
                         </button>
                         {dropdownOpen && (
-                            <ul className="dropdown-menu show" style={{ maxHeight: "200px", overflowY: "auto" }}>
+                            <ul
+                                className="dropdown-menu show"
+                                style={{ maxHeight: "200px", overflowY: "auto" }}
+                            >
                                 {Array.from({ length: totalPages }, (_, i) => (
                                     <li key={i + 1}>
                                         <button

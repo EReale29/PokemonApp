@@ -1,83 +1,85 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import PokemonCard from "@/components/PokemonCard"; // Import de votre composant PokemonCard
-import PokemonModal from "@/components/PokemonModal"; // Import du modal
+import PokemonCard from "@/components/PokemonCard";
+import PokemonModal from "@/components/PokemonModal";
 import { fetchPokemonList } from "@/utils/api";
-import { Pokemon } from "@/utils/types"; // ✅ Import des types et badges
-import { useSession } from "next-auth/react"; // Pour vérifier la session de l'utilisateur
-import { filterPokemon, handleFavoriteClick, changePage } from "@/utils/pokemonUtils"; // ✅
+import { Pokemon } from "@/utils/types";
+import { useSession } from "next-auth/react";
+import { filterPokemon, handleFavoriteClick } from "@/utils/pokemonUtils";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/Pagination";
 
 export default function HomePage() {
-    const { data: session } = useSession(); // Vérification de la session de l'utilisateur
-    const [pokemonList, setPokemonList] = useState<Pokemon[]>([]); // Liste des Pokémon
-    const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]); // Pokémon filtrés
-    const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null); // Pokémon sélectionné pour afficher ses détails
-    const [favorites, setFavorites] = useState<Pokemon[]>([]); // Liste des favoris
-    const [currentPage, setCurrentPage] = useState(1); // Page courante pour la pagination
-    const [searchTerm] = useState(""); // Terme de recherche
-    const [selectedTypes] = useState<string[]>([]); // Types sélectionnés pour filtrer
-    const [loading, setLoading] = useState(true); // État de chargement
-    const pokemonsPerPage = 12; // Nombre de pokémons par page
+    const { data: session } = useSession();
+    const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
+    const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]);
+    const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+    const [favorites, setFavorites] = useState<Pokemon[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const pokemonsPerPage = 12;
+
     // Calcul des pages pour la pagination
     const totalPages = Math.ceil(filteredPokemon.length / pokemonsPerPage);
     const indexOfLastPokemon = currentPage * pokemonsPerPage;
     const indexOfFirstPokemon = indexOfLastPokemon - pokemonsPerPage;
     const currentPokemons = filteredPokemon.slice(indexOfFirstPokemon, indexOfLastPokemon);
 
-    // Gérer la recherche
+    // Gestion de la recherche
     const handleSearchChange = (searchTerm: string) => {
+        setSearchTerm(searchTerm);
         const filtered = filterPokemon(pokemonList, searchTerm, []);
         setFilteredPokemon(filtered);
-        setCurrentPage(1); // Réinitialiser la page après une recherche
+        setCurrentPage(1);
     };
 
-    // Gérer le changement de types
+    // Gestion du changement de types
     const handleTypeChange = (selectedTypes: string[]) => {
+        setSelectedTypes(selectedTypes);
         const filtered = filterPokemon(pokemonList, "", selectedTypes);
         setFilteredPokemon(filtered);
-        setCurrentPage(1); // Réinitialiser la page après un changement de type
+        setCurrentPage(1);
     };
 
-    // Fonction pour charger les Pokémon
+    // Chargement des Pokémon avec gestion des erreurs
     useEffect(() => {
         async function loadPokemon() {
             try {
-                setLoading(true); // Lancer le chargement
-                const data = await fetchPokemonList(); // Charger les données des Pokémon
-                setPokemonList(data); // Mettre à jour la liste des Pokémon
-                setFilteredPokemon(data); // Mettre à jour les Pokémon filtrés
-            } catch (error) {
-                console.error("Erreur lors du chargement des Pokémon:", error);
+                setLoading(true);
+                setError(null);
+                const data = await fetchPokemonList();
+                setPokemonList(data);
+                setFilteredPokemon(data);
+            } catch (err: any) {
+                console.error("Erreur lors du chargement des Pokémon:", err);
+                setError("Erreur lors du chargement des Pokémon. Veuillez réessayer plus tard.");
             } finally {
-                setLoading(false); // Fin du chargement
+                setLoading(false);
             }
         }
-
-        loadPokemon(); // Appel de la fonction pour charger les Pokémon
+        loadPokemon();
     }, []);
 
-
-
-    // Filtrage des Pokémon en fonction du nom et des types
+    // Mettre à jour le filtrage quand searchTerm, selectedTypes ou pokemonList changent
     useEffect(() => {
-        const filtered = filterPokemon(pokemonList, searchTerm, selectedTypes); // Utilisation de la fonction utilitaire
-        setFilteredPokemon(filtered); // Mettre à jour les Pokémon filtrés
-        setCurrentPage(1); // Réinitialiser la page après filtrage
+        const filtered = filterPokemon(pokemonList, searchTerm, selectedTypes);
+        setFilteredPokemon(filtered);
+        setCurrentPage(1);
     }, [searchTerm, selectedTypes, pokemonList]);
-
-
 
     return (
         <div className="container mt-4">
             <h1 className="text-center title mb-4">Liste des Pokémon</h1>
 
-            {/* Affichage du loader pendant le chargement */}
+            {/* Affichage du message d'erreur en cas de problème */}
+            {error && <div className="alert alert-danger text-center">{error}</div>}
+
             {loading ? (
                 <div className="text-center">
-                    {/* Vous pouvez ajouter un spinner ici */}
                     <div className="loader"></div>
                     <p>Chargement des Pokémon...</p>
                 </div>
@@ -86,14 +88,16 @@ export default function HomePage() {
                     {/* Barre de recherche et filtrage */}
                     <SearchBar onSearchChange={handleSearchChange} onTypeChange={handleTypeChange} />
 
-                    {/* ✅ Affichage des Pokémon */}
+                    {/* Affichage des Pokémon */}
                     <div className="row">
                         {currentPokemons.length > 0 ? (
                             currentPokemons.map((pokemon: Pokemon) => (
                                 <div key={pokemon.id} className="col-md-3">
                                     <PokemonCard
                                         pokemon={pokemon}
-                                        onFavoriteClick={() => handleFavoriteClick(pokemon, favorites, setFavorites, session)}
+                                        onFavoriteClick={() =>
+                                            handleFavoriteClick(pokemon, favorites, setFavorites, session)
+                                        }
                                         onCardClick={() => setSelectedPokemon(pokemon)}
                                     />
                                 </div>
@@ -103,11 +107,20 @@ export default function HomePage() {
                         )}
                     </div>
 
-                    {/* ✅ Pagination avec Dropdown */}
-                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage}/>
+                    {/* Pagination */}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
 
-                    {/* ✅ Affichage du modal si un Pokémon est sélectionné */}
-                    {selectedPokemon && <PokemonModal pokemon={selectedPokemon} onCloseAction={() => setSelectedPokemon(null)} />}
+                    {/* Affichage du modal si un Pokémon est sélectionné */}
+                    {selectedPokemon && (
+                        <PokemonModal
+                            pokemon={selectedPokemon}
+                            onCloseAction={() => setSelectedPokemon(null)}
+                        />
+                    )}
                 </>
             )}
         </div>

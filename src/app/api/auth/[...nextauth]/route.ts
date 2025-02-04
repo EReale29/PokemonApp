@@ -2,9 +2,9 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import { NextApiRequest, NextApiResponse } from "next";
-import { Session } from "next-auth"; // Import des types Session et User
+import { Session } from "next-auth";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { firebaseApp } from "@/lib/firebase"; // Assurez-vous que vous avez bien configuré Firebase
+import { firebaseApp } from "@/lib/firebase";
 import { JWT } from "next-auth/jwt";
 
 const db = getFirestore(firebaseApp);
@@ -20,18 +20,16 @@ export const authOptions = {
             clientSecret: process.env.GITHUB_CLIENT_SECRET!,
         }),
     ],
-    secret: process.env.NEXTAUTH_SECRET, // Assurez-vous de définir un secret unique
+    secret: process.env.NEXTAUTH_SECRET, // Secret unique
     callbacks: {
-        async jwt({ token, account, user }: { token: JWT, account: any, user: any }) {
+        async jwt({ token, account, user }: { token: JWT; account: any; user: any }) {
             if (user) {
                 const providerId = account?.provider || "unknown";
-                const userId = `${user.email}-${providerId}`; // Crée un ID unique basé sur l'email + le provider
+                const userId = `${user.email}-${providerId}`;
 
                 const userRef = doc(db, "users", userId);
-
                 try {
                     const userDoc = await getDoc(userRef);
-
                     if (!userDoc.exists()) {
                         await setDoc(userRef, {
                             email: user.email,
@@ -39,22 +37,19 @@ export const authOptions = {
                             image: user.image,
                             providerId: providerId,
                             createdAt: new Date(),
-                            uid: userId,  // Utilisez un ID unique généré
+                            uid: userId,
                         });
                     }
-
-                    token.id = userId; // Assurez-vous que l'ID est ajouté au token
-
+                    token.id = userId;
                 } catch (error) {
                     console.error("Erreur lors de la gestion de l'utilisateur dans Firestore :", error);
+                    // Selon vos besoins, vous pouvez décider de renvoyer une valeur par défaut ou laisser token sans id
                 }
             }
             return token;
         },
 
-        // Fonction de session avec typage explicite
-        async session({ session, token }: { session: Session, token: JWT }) {
-            // Vérifier si user existe et définir l'id de l'utilisateur
+        async session({ session, token }: { session: Session; token: JWT }) {
             if (token.id && typeof token.id === "string") {
                 session.user.id = token.id;
             }
@@ -63,11 +58,23 @@ export const authOptions = {
     },
 };
 
-// Utilisation des bons types pour Next.js
+// Endpoint GET
 export const GET = async (req: NextApiRequest, res: NextApiResponse) => {
-    return NextAuth(req, res, authOptions); // Utilisation de NextAuth pour gérer les requêtes
+    try {
+        // NextAuth gère la requête et la réponse selon authOptions
+        return await NextAuth(req, res, authOptions);
+    } catch (error) {
+        console.error("Erreur dans l'endpoint GET /auth :", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 };
 
+// Endpoint POST
 export const POST = async (req: NextApiRequest, res: NextApiResponse) => {
-    return NextAuth(req, res, authOptions); // Même chose pour la méthode POST
+    try {
+        return await NextAuth(req, res, authOptions);
+    } catch (error) {
+        console.error("Erreur dans l'endpoint POST /auth :", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
 };

@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { signIn, signOut, useSession } from "next-auth/react"; // Utilisation de NextAuth pour le signIn et signOut
+import { signIn, signOut, useSession } from "next-auth/react"; // Utilisation de NextAuth pour l'authentification
 
 export default function Navbar() {
-    const { data: session, status } = useSession(); // Récupérer les données de session de NextAuth
+    const { data: session, status } = useSession(); // Récupérer la session
     const [darkMode, setDarkMode] = useState(false);
-    const [showModal, setShowModal] = useState(false); // Pour contrôler la modale de connexion
+    const [showModal, setShowModal] = useState(false); // Contrôle de la modale de connexion
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
         const savedMode = localStorage.getItem("darkMode");
@@ -24,10 +25,27 @@ export default function Navbar() {
         document.documentElement.setAttribute("data-bs-theme", newMode ? "dark" : "light");
     };
 
-    const handleSignIn = (provider: string) => {
-        // Appel à NextAuth pour gérer l'authentification via le fournisseur spécifié (Google ou GitHub)
-        signIn(provider, { callbackUrl: window.location.href }); // La redirection se fera après la connexion réussie
-        setShowModal(false); // Ferme la modale après la connexion
+    // Fonction asynchrone pour gérer la connexion avec un provider
+    const handleSignIn = async (provider: string) => {
+        setErrorMessage(null);
+        try {
+            await signIn(provider, { callbackUrl: window.location.href });
+            setShowModal(false);
+        } catch (error: any) {
+            console.error("Erreur lors de la connexion :", error);
+            setErrorMessage("Une erreur est survenue lors de la connexion.");
+        }
+    };
+
+    // Fonction asynchrone pour gérer la déconnexion
+    const handleSignOut = async () => {
+        setErrorMessage(null);
+        try {
+            await signOut();
+        } catch (error: any) {
+            console.error("Erreur lors de la déconnexion :", error);
+            setErrorMessage("Une erreur est survenue lors de la déconnexion.");
+        }
     };
 
     return (
@@ -47,48 +65,67 @@ export default function Navbar() {
                             <li className="nav-item"><Link className="nav-link" href="/contact">Nous Contacter</Link></li>
                         </ul>
 
-                        {/* ✅ Toggle Mode Sombre */}
+                        {/* Toggle Mode Sombre */}
                         <div className="form-check form-switch me-4">
-                            <input className="form-check-input" type="checkbox" id="darkModeSwitch" checked={darkMode} onChange={toggleDarkMode} />
-                            <label className="form-check-label" htmlFor="darkModeSwitch">{darkMode ? "🌙" : "☀️"}</label>
+                            <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id="darkModeSwitch"
+                                checked={darkMode}
+                                onChange={toggleDarkMode}
+                            />
+                            <label className="form-check-label" htmlFor="darkModeSwitch">
+                                {darkMode ? "🌙" : "☀️"}
+                            </label>
                         </div>
 
-                        {/* ✅ Authentification */}
+                        {/* Authentification */}
                         <div className="d-flex">
                             {status === "loading" ? (
                                 <span>Chargement...</span>
                             ) : session ? (
-                                <>
-                                    <div className="nav-item dropdown">
-                                        <button className="btn btn-light dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            {session.user?.name || "Profil"}
-                                        </button>
-                                        <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
-                                            <li className="dropdown-item"><Link className="nav-link" href="/profile">Mon Profil</Link></li>
-                                            <li><hr className="dropdown-divider" /></li>
-                                            <li className="dropdown-item"><Link className="nav-link" href="/team">Mon Équipe</Link></li>
-                                            <li><hr className="dropdown-divider" /></li>
-                                            <li className="dropdown-item"><Link className="nav-link" href="/favorites">Favoris</Link></li>
-                                            <li><hr className="dropdown-divider" /></li>
-                                            <li><button className="dropdown-item" onClick={() => signOut()}>Déconnexion</button></li>
-                                        </ul>
-                                    </div>
-                                </>
+                                <div className="nav-item dropdown">
+                                    <button className="btn btn-light dropdown-toggle" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        {session.user?.name || "Profil"}
+                                    </button>
+                                    <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                                        <li className="dropdown-item"><Link className="nav-link" href="/profile">Mon Profil</Link></li>
+                                        <li><hr className="dropdown-divider" /></li>
+                                        <li className="dropdown-item"><Link className="nav-link" href="/team">Mon Équipe</Link></li>
+                                        <li><hr className="dropdown-divider" /></li>
+                                        <li className="dropdown-item"><Link className="nav-link" href="/favorites">Favoris</Link></li>
+                                        <li><hr className="dropdown-divider" /></li>
+                                        <li className="dropdown-item">
+                                            <button className="btn btn-link" onClick={handleSignOut}>Déconnexion</button>
+                                        </li>
+                                    </ul>
+                                </div>
                             ) : (
-                                <button className="btn btn-light" onClick={() => setShowModal(true)}>Se connecter</button>
+                                <button className="btn btn-light" onClick={() => setShowModal(true)}>
+                                    Se connecter
+                                </button>
                             )}
                         </div>
                     </div>
                 </div>
             </nav>
 
-            {/* ✅ Modale de connexion */}
+            {/* Affichage d'un éventuel message d'erreur */}
+            {errorMessage && (
+                <div className="container mt-2">
+                    <div className="alert alert-danger text-center">
+                        {errorMessage}
+                    </div>
+                </div>
+            )}
+
+            {/* Modale de connexion */}
             {showModal && (
                 <>
-                    {/* ✅ Fond semi-transparent du modal */}
+                    {/* Fond semi-transparent */}
                     <div className="modal-backdrop fade show"></div>
 
-                    {/* ✅ Fenêtre du modal */}
+                    {/* Fenêtre du modal */}
                     <div className="modal show d-block" tabIndex={-1} role="dialog" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
                         <div className="modal-dialog" role="document">
                             <div className="modal-content">

@@ -10,13 +10,24 @@ export async function fetchPokemonList() {
         return cachedData;
     }
 
-    // Sinon, faire l'appel API
-    const res = await fetch("https://pokebuildapi.fr/api/v1/pokemon");
-    if (!res.ok) throw new Error("Erreur lors du chargement des Pokémon");
-    const data = await res.json();
+    try {
+        // Faire l'appel API
+        const res = await fetch("https://pokebuildapi.fr/api/v1/pokemon");
 
-    // Stocker le résultat dans le cache
-    cache.set(cacheKey, data);
+        // Vérifier le statut de la réponse
+        if (!res.ok) {
+            throw new Error(`Erreur lors du chargement des Pokémon (HTTP ${res.status})`);
+        }
 
-    return data;
+        const data = await res.json();
+
+        // Stocker le résultat dans le cache
+        cache.set(cacheKey, data);
+
+        return data;
+    } catch (error) {
+        console.error("Erreur lors de la récupération de la liste des Pokémon :", error);
+        // Propager l'erreur afin que l'appelant puisse également la gérer si nécessaire
+        throw error;
+    }
 }

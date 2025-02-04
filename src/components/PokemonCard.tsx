@@ -1,10 +1,7 @@
-// src/components/PokemonCard.tsx
-"use client";
-
 import React, { useState, useEffect } from "react";
 import { PokemonCardProps } from "@/utils/types";
 import { useSession } from "next-auth/react";
-import {fetchFavorites} from "@/utils/pokemonUtils"; // Importation de next-auth pour vérifier la connexion
+import { fetchFavorites } from "@/utils/pokemonUtils";
 
 const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onFavoriteClick, onCardClick }) => {
     const { data: session } = useSession(); // Vérification de la session (connexion de l'utilisateur)
@@ -12,10 +9,14 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onFavoriteClick, onC
 
     useEffect(() => {
         const checkIfFavorite = async () => {
-            if (session && session.user?.id) {
-                const favorites = await fetchFavorites(session.user.id);  // Récupérer les favoris de l'utilisateur
-                const isPokemonFavorite = favorites.some(fav => fav.id === pokemon.id);  // Vérifie si ce Pokémon est dans les favoris
-                setIsFavorite(isPokemonFavorite); // Mettre à jour `isFavorite`
+            try {
+                if (session && session.user?.id) {
+                    const favorites = await fetchFavorites(session.user.id);
+                    const isPokemonFavorite = favorites.some(fav => fav.id === pokemon.id);
+                    setIsFavorite(isPokemonFavorite);
+                }
+            } catch (error) {
+                console.error("Erreur lors de la récupération des favoris :", error);
             }
         };
 
@@ -27,17 +28,25 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onFavoriteClick, onC
         e.stopPropagation(); // Empêche le clic d'être propagé à la carte
 
         if (!session) {
-            console.log('test')
+            console.warn("Utilisateur non connecté, impossible d'ajouter aux favoris.");
             return;
         }
 
-        onFavoriteClick(); // Appelle la fonction de gestion des favoris
-        setIsFavorite(!isFavorite); // Change l'état du favori
+        try {
+            onFavoriteClick();
+            setIsFavorite(!isFavorite);
+        } catch (error) {
+            console.error("Erreur lors de la gestion du clic favori :", error);
+        }
     };
 
     // Gérer le clic sur la carte pour afficher les détails du Pokémon
     const handleCardClick = () => {
-        onCardClick();  // Appelle la fonction de gestion de la carte
+        try {
+            onCardClick();
+        } catch (error) {
+            console.error("Erreur lors du clic sur la carte :", error);
+        }
     };
 
     return (
