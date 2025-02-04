@@ -46,7 +46,7 @@ export interface Pokemon {
     image: string;         // URL de l'image du Pokémon
     apiTypes: PokemonType[];  // Types du Pokémon (ex : "Feu", "Eau", etc.)
     stats: PokemonStats;     // Statistiques du Pokémon
-    nickname: string;       // Surnom du pokemon
+    nickname?: string;       // Surnom du pokemon
 }
 
 // Définition du type pour un favori, qui associe un Pokémon à un utilisateur
