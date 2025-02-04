@@ -35,12 +35,8 @@ export const deleteEquipe = async (pokemonId: number, userId: string) => {
 };
 
 export const updateEquipe = async (pokemon: Pokemon, id: string) => {
-    const equipeRef = doc(db, "equipe", id, "pokemons");
-    const docRef = doc(db, "equipe", id, "pokemons", pokemon.id.toString());
-    await setDoc(doc(equipeRef, pokemon.id.toString()), {
-        ...docRef,
-        ...pokemon,
-    });
+    const equipeRef = doc(db, "equipe", id, "pokemons", pokemon.id.toString());
+    await setDoc(equipeRef, { ...pokemon }, { merge: true });
     const cacheKey = `equipe-${id}`;
     cache.del(cacheKey);
 }

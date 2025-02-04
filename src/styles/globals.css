@@ -3,6 +3,8 @@
 @import './components.css';
 @import './animations.css';
 @import './loader.css';
+/* app/globals.css */
+@import "bootstrap-icons/font/bootstrap-icons.css";
 
 @tailwind base;
 @tailwind components;

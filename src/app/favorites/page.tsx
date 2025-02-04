@@ -5,10 +5,11 @@ import { Pokemon } from "@/utils/types";
 import PokemonCard from "@/components/PokemonCard";
 import { filterPokemon, handleFavoriteClick } from "@/utils/pokemonUtils";
 import PokemonModal from "@/components/PokemonModal";
-import { useSession } from "next-auth/react";
+import {signIn, useSession} from "next-auth/react";
 import { fetchFavorites } from "@/utils/pokemonUtils";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/Pagination";
+import NotConnected from "@/components/NotConnected";
 
 export default function FavoritesPage() {
     const { data: session } = useSession();
@@ -18,7 +19,7 @@ export default function FavoritesPage() {
     const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState("");
-    const [loading, setLoading] = useState(true); // État de chargement
+    const [loading, setLoading] = useState(false); // État de chargement
     const [selectedTypes, setSelectedTypes] = useState<string[]>([]); // Types sélectionnés pour filtrer
     const pokemonsPerPage = 12;
 
@@ -65,6 +66,11 @@ export default function FavoritesPage() {
         setFilteredPokemon(filtered);
         setCurrentPage(1);
     };
+
+
+    if (!session) {
+        return <NotConnected />;
+    }
 
 
     return (
