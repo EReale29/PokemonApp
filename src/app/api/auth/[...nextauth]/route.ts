@@ -55,7 +55,7 @@ export const authOptions = {
         // Fonction de session avec typage explicite
         async session({ session, token }: { session: Session, token: JWT }) {
             // Vérifier si user existe et définir l'id de l'utilisateur
-            if (token.id) {
+            if (token.id && typeof token.id === "string") {
                 session.user.id = token.id;
             }
             return session;

@@ -3,6 +3,7 @@
 import { db } from "@/lib/firebase";
 import { doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
 import { Pokemon } from "@/utils/types";
+import cache from "@/lib/cache";
 
 // Ajouter un favori
 export const addFavorite = async (pokemon: Pokemon, userId: string) => {
@@ -14,12 +15,17 @@ export const addFavorite = async (pokemon: Pokemon, userId: string) => {
         apiTypes: pokemon.apiTypes,
         stats: pokemon.stats,
     });
+    const cacheKey = `favorites-${userId}`;
+    cache.del(cacheKey);
+
 };
 
 // Retirer un favori
-export const removeFavorite = async (pokemonId: number, userId: string) => {
+export const deleteFavorite = async (pokemonId: number, userId: string) => {
     const docRef = doc(db, "favorites", userId, "pokemons", pokemonId.toString());
     await deleteDoc(docRef);
+    const cacheKey = `favorites-${userId}`;
+    cache.del(cacheKey);
 };
 
 // Récupérer les favoris

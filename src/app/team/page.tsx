@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { fetchEquipe, handleEquipeClick } from "@/utils/pokemonUtils"; // Utiliser votre fonction pour récupérer l'équipe et ajouter aux équipes
 import { Pokemon } from "@/utils/types"; // Assurez-vous d'avoir le type Pokemon
-import {addEquipe, removeEquipe, updateEquipe} from "@/lib/firebaseEquipe"; // Pour l'ajout et la suppression d'équipe
+import {deleteEquipe, updateEquipe} from "@/lib/firebaseEquipe"; // Pour l'ajout et la suppression d'équipe
 
 export default function Team() {
     const { data: session } = useSession();
@@ -27,7 +27,7 @@ export default function Team() {
 
     const handleRemovePokemon = async () => {
         if (pokemonToRemove && session?.user?.id) {
-            await removeEquipe(pokemonToRemove.id, session.user?.id); // Supprimer du Firebase
+            await deleteEquipe(pokemonToRemove.id, session.user?.id); // Supprimer du Firebase
             setTeam(team.filter(pokemon => pokemon.id !== pokemonToRemove.id)); // Mettre à jour l'équipe localement
             setShowConfirm(false); // Fermer la confirmation
         }

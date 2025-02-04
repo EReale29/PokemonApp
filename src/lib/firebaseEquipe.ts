@@ -3,6 +3,7 @@
 import { db } from "@/lib/firebase";
 import { doc, setDoc, getDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
 import { Pokemon } from "@/utils/types";
+import cache from "@/lib/cache";
 
 // Ajouter un Pokémon à l'équipe
 export const addEquipe = async (pokemon: Pokemon, userId: string) => {
@@ -20,17 +21,28 @@ export const addEquipe = async (pokemon: Pokemon, userId: string) => {
         name: pokemon.name,
         image: pokemon.image,
     });
+
+    const cacheKey = `equipe-${userId}`;
+    cache.del(cacheKey);
 };
 
 // Retirer un Pokémon de l'équipe
-export const removeEquipe = async (pokemonId: number, userId: string) => {
+export const deleteEquipe = async (pokemonId: number, userId: string) => {
     const docRef = doc(db, "equipe", userId, "pokemons", pokemonId.toString());
     await deleteDoc(docRef);
+    const cacheKey = `equipe-${userId}`;
+    cache.del(cacheKey);
 };
 
 export const updateEquipe = async (pokemon: Pokemon, id: string) => {
-    removeEquipe(pokemon.id, id);
-    addEquipe(pokemon, id);
+    const equipeRef = doc(db, "equipe", id, "pokemons");
+    const docRef = doc(db, "equipe", id, "pokemons", pokemon.id.toString());
+    await setDoc(doc(equipeRef, pokemon.id.toString()), {
+        ...docRef,
+        ...pokemon,
+    });
+    const cacheKey = `equipe-${id}`;
+    cache.del(cacheKey);
 }
 
 

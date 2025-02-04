@@ -1,7 +1,8 @@
 // src/utils/pokemonUtils.ts
 import { Pokemon } from "@/utils/types";
-import { addFavorite, removeFavorite, getFavorites } from "@/lib/firebaseFavorites";
-import { addEquipe, removeEquipe, getEquipe } from "@/lib/firebaseEquipe";
+import cache from "@/lib/cache";
+import { addFavorite, deleteFavorite, getFavorites } from "@/lib/firebaseFavorites";
+import { addEquipe, deleteEquipe, getEquipe } from "@/lib/firebaseEquipe";
 
 export const filterPokemon = (
     pokemonList: Pokemon[],
@@ -37,7 +38,7 @@ export const handleFavoriteClick = async (pokemon: Pokemon, favorites: Pokemon[]
         return;
     }
     if (favorites.some((fav) => fav.id === pokemon.id)) {
-        await removeFavorite(pokemon.id, session.user.id);
+        await deleteFavorite(pokemon.id, session.user.id);
         setFavorites(favorites.filter((fav) => fav.id !== pokemon.id));
     } else {
         await addFavorite(pokemon, session.user.id);
@@ -65,10 +66,9 @@ export const handleEquipeClick = async (
         alert("Veuillez vous connecter pour ajouter à l'équipe !");
         return;
     }
-
     if (equipe.some((p) => p.id === pokemon.id)) {
         // Si le Pokémon est déjà dans l'équipe, on le retire
-        await removeEquipe(pokemon.id, session.user.id);
+        await deleteEquipe(pokemon.id, session.user.id);
         setEquipe(equipe.filter((p) => p.id !== pokemon.id));
     } else {
         if (equipe.length === 6) {
@@ -82,11 +82,29 @@ export const handleEquipeClick = async (
 };
 
 export const fetchFavorites = async (userId: string): Promise<Pokemon[]> => {
+    const cacheKey = `favorites-${userId}`;
+
+    // Vérifier si des données sont déjà en cache
+    const cachedEquipe = cache.get<Pokemon[]>(cacheKey);
+    if (cachedEquipe) {
+        return cachedEquipe;
+    }
     const favorites = await getFavorites(userId);
+    // Stocker le résultat dans le cache
+    cache.set(cacheKey, favorites);
     return favorites;
 };
 
 export const fetchEquipe = async (userId: string): Promise<Pokemon[]> => {
+    const cacheKey = `equipe-${userId}`;
+
+    // Vérifier si des données sont déjà en cache
+    const cachedEquipe = cache.get<Pokemon[]>(cacheKey);
+    if (cachedEquipe) {
+        return cachedEquipe;
+    }
     const equipe = await getEquipe(userId);
+    // Stocker le résultat dans le cache
+    cache.set(cacheKey, equipe);
     return equipe;
 };
