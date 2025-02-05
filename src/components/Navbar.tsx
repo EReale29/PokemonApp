@@ -31,9 +31,11 @@ export default function Navbar() {
         try {
             await signIn(provider, { callbackUrl: window.location.href });
             setShowModal(false);
-        } catch (error: any) {
-            console.error("Erreur lors de la connexion :", error);
-            setErrorMessage("Une erreur est survenue lors de la connexion.");
+        } catch (error) {
+            if  (error instanceof Error) {
+                console.error("Erreur lors de la connexion :", error);
+                setErrorMessage("Une erreur est survenue lors de la connexion.");
+            }
         }
     };
 
@@ -42,9 +44,11 @@ export default function Navbar() {
         setErrorMessage(null);
         try {
             await signOut();
-        } catch (error: any) {
-            console.error("Erreur lors de la déconnexion :", error);
-            setErrorMessage("Une erreur est survenue lors de la déconnexion.");
+        } catch (error) {
+            if  (error instanceof Error) {
+                console.error("Erreur lors de la déconnexion :", error);
+                setErrorMessage("Une erreur est survenue lors de la déconnexion.");
+            }
         }
     };
 

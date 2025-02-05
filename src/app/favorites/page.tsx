@@ -29,8 +29,10 @@ export default function FavoritesPage() {
 
     // Mise à jour du filtrage quand favorites, searchTerm ou selectedTypes changent
     useEffect(() => {
+        setLoading(true);
         setFilteredPokemon(filterPokemon(favorites, searchTerm, selectedTypes));
         setCurrentPage(1);
+        setLoading(false);
     }, [favorites, searchTerm, selectedTypes]);
 
     // Gérer la recherche

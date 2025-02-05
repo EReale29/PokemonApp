@@ -70,9 +70,11 @@ export default function ContactPage() {
 
             setSuccess(true);
             setFormData({ name: "", email: "", objet: "", message: "" }); // Réinitialiser le formulaire
-        } catch (error: any) {
-            console.error("Erreur lors de l'envoi du formulaire :", error);
-            setErrorMessage(error.message || "Une erreur inconnue est survenue.");
+        } catch (error) {
+            if  (error instanceof Error) {
+                console.error("Erreur lors de l'envoi du formulaire :", error);
+                setErrorMessage(error.message || "Une erreur inconnue est survenue.");
+            }
         }
     };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ChangeEvent, useRef } from "react";
+import React from "react";
 import { useSession } from "next-auth/react";
 import NotConnected from "@/components/NotConnected";
 

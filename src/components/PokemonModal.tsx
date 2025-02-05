@@ -136,13 +136,13 @@ export default function PokemonModal({ pokemon, onCloseAction }: PokemonModalPro
                             className="btn btn-outline-dark"
                             onClick={handleAddToEquipe}
                         >
-                            <img
+                            <Image
                                 src={
                                     equipped ? "/images/pokeball_pleine.png" : "/images/pokeball_vide.png"
                                 }
-                                alt="Pokéball"
-                                width="40"
-                                height="40"
+                                alt={"Pokéball"}
+                                width={40}
+                                height={40}
                             />
                         </button>
                         <button type="button" className="btn btn-secondary" onClick={handleClose}>

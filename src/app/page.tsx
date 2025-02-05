@@ -54,9 +54,11 @@ export default function HomePage() {
                 const data = await fetchPokemonList();
                 setPokemonList(data);
                 setFilteredPokemon(data);
-            } catch (err: any) {
-                console.error("Erreur lors du chargement des Pokémon:", err);
-                setError("Erreur lors du chargement des Pokémon. Veuillez réessayer plus tard.");
+            } catch (err) {
+                if  (err instanceof Error) {
+                    console.error("Erreur lors du chargement des Pokémon:", err);
+                    setError("Erreur lors du chargement des Pokémon. Veuillez réessayer plus tard.");
+                }
             } finally {
                 setLoading(false);
             }

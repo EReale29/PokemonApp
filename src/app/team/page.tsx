@@ -27,9 +27,11 @@ export default function Team() {
                 try {
                     // reloadTeam est une fonction du contexte pour rafraîchir les données
                     await reloadTeam();
-                } catch (err: any) {
-                    console.error("Erreur lors du chargement de l'équipe :", err);
-                    setError("Erreur lors du chargement de l'équipe. Veuillez réessayer.");
+                } catch (err) {
+                    if  (err instanceof Error) {
+                        console.error("Erreur lors du chargement de l'équipe :", err);
+                        setError("Erreur lors du chargement de l'équipe. Veuillez réessayer.");
+                    }
                 } finally {
                     setLoading(false);
                 }
@@ -46,9 +48,11 @@ export default function Team() {
                 setShowConfirm(false);
                 // Rafraîchir l'équipe via le contexte
                 await reloadTeam();
-            } catch (err: any) {
-                console.error("Erreur lors de la suppression de ce Pokémon :", err);
-                alert("Erreur lors de la suppression. Veuillez réessayer.");
+            } catch (err) {
+                if  (err instanceof Error) {
+                    console.error("Erreur lors de la suppression de ce Pokémon :", err);
+                    alert("Erreur lors de la suppression. Veuillez réessayer.");
+                }
             }
         }
     };
@@ -61,9 +65,11 @@ export default function Team() {
                 await updateEquipe(updatedPokemon, session.user.id);
                 // Rafraîchir l'équipe via le contexte
                 await reloadTeam();
-            } catch (err: any) {
-                console.error("Erreur lors de l'ajout du surnom :", err);
-                alert("Erreur lors de l'ajout du surnom. Veuillez réessayer.");
+            } catch (err) {
+                if  (err instanceof Error) {
+                    console.error("Erreur lors de l'ajout du surnom :", err);
+                    alert("Erreur lors de l'ajout du surnom. Veuillez réessayer.");
+                }
             }
         }
     };
@@ -125,7 +131,7 @@ export default function Team() {
                                                     setShowConfirm(true);
                                                 }}
                                             >
-                                                Retirer de l'équipe
+                                                Retirer de l&apos;équipe
                                             </button>
                                         </div>
                                     </div>
