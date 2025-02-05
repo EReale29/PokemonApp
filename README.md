@@ -35,60 +35,26 @@ PokemonApp est une application permettant aux utilisateurs d'explorer, recherche
 - [Jest](https://jestjs.io/) - Tests unitaires et mocking des modules Firebase
 - [Nodemailer](https://nodemailer.com/) - Envoi d'e-mails automatisés
 
-## Architecture du projet
+## Variables d'Environnement
+Pour configurer correctement l'application, ajoutez un fichier `.env.local` à la racine du projet avec les variables suivantes :
 ```
-src
-├── app
-│   ├── api
-│   │   ├── auth
-│   │   │   ├── [...nextauth]
-│   │   │   │   ├── route.ts
-│   │   │   ├── error.tsx
-│   │   ├── contact
-│   │   │   ├── route.ts
-│   ├── contact
-│   │   ├── page.tsx
-│   ├── favorites
-│   │   ├── page.tsx
-│   ├── profile
-│   │   ├── page.tsx
-│   ├── team
-│   │   ├── page.tsx
-│   ├── error
-│   │   ├── page.tsx
-│   ├── not-found
-│   │   ├── page.tsx
-│   ├── home
-│   │   ├── page.tsx
-├── components
-│   ├── ErrorBoundary.tsx
-│   ├── Navbar.tsx
-│   ├── NotConnected.tsx
-│   ├── Pagination.tsx
-│   ├── PokemonCard.tsx
-│   ├── PokemonModal.tsx
-│   ├── SearchBar.tsx
-├── context
-│   ├── UserDataContext.tsx
-├── lib
-│   ├── cache.ts
-│   ├── firebase.ts
-│   ├── firebaseEquipe.ts
-│   ├── firebaseFavorites.ts
-├── styles
-│   ├── animations.css
-│   ├── components.css
-│   ├── globals.css
-│   ├── loader.css
-│   ├── themes.css
-├── tests
-│   ├── pokemonUtils.test.tsx
-├── utils
-│   ├── api.ts
-│   ├── authOptions.ts
-│   ├── authType.ts
-│   ├── pokemonUtils.ts
-│   ├── types.ts
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXTAUTH_SECRET=your_nextauth_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+EMAIL_HOST=smtp.your-email.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@example.com
+EMAIL_PASS=your-email-password
+EMAIL_FROM=no-reply@example.com
+EMAIL_ADMIN=admin@example.com
 ```
 
 ## Installation
@@ -134,4 +100,3 @@ Ce projet est sous licence **MIT** - voir le fichier [LICENSE](LICENSE) pour plu
 ---
 
 ✨ _Attrapez-les tous avec PokemonApp !_ ✨
-
