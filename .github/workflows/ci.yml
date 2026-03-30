@@ -51,7 +51,7 @@ jobs:
         run: pip install yamllint
       
       - name: Lint kubernetes.yaml
-        run: yamllint -d '{extends: default, rules: {line-length: {max: 120}, comments: disable}}' kubernetes.yaml
+        run: 'yamllint -d "{extends: default, rules: {line-length: {max: 120}, comments: disable}}" kubernetes.yaml'
 
   trivy-deps:
     name: Trivy Scan Dependencies
