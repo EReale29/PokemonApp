@@ -97,7 +97,7 @@ jobs:
           output: 'trivy-deps-report.txt'
       
       - name: Upload Trivy dependencies report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: trivy-deps-report
@@ -139,7 +139,7 @@ jobs:
           category: 'trivy-image'
       
       - name: Upload Trivy image report as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: trivy-image-report
@@ -166,7 +166,7 @@ jobs:
         continue-on-error: false
       
       - name: Upload Conftest report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: conftest-report
