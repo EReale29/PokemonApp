@@ -51,12 +51,11 @@ jobs:
         run: pip install yamllint
       
       - name: Lint kubernetes.yaml
-        run: yamllint -c "{extends: default, rules: {line-length: {max: 120}, comments: disable}}" kubernetes.yaml
+        run: yamllint -d '{extends: default, rules: {line-length: {max: 120}, comments: disable}}' kubernetes.yaml
 
   trivy-deps:
     name: Trivy Scan Dependencies
     runs-on: ubuntu-latest
-    continue-on-error: true
     
     steps:
       - name: Checkout code
@@ -64,6 +63,7 @@ jobs:
       
       - name: Run Trivy scan on dependencies
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -83,7 +83,6 @@ jobs:
   trivy-image:
     name: Trivy Scan Docker Image
     runs-on: ubuntu-latest
-    continue-on-error: true
     needs: build
     
     steps:
@@ -103,6 +102,7 @@ jobs:
       
       - name: Run Trivy scan on Docker image
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           input: 'pokemon-app:latest'
           format: 'sarif'
