@@ -2,14 +2,6 @@
 	{
 		"filename": "kubernetes.yaml",
 		"namespace": "main",
-		"successes": 1,
-		"failures": [
-			{
-				"msg": "Le pod tourne en root, déploiement refusé",
-				"metadata": {
-					"query": "data.main.violation"
-				}
-			}
-		]
+		"successes": 2
 	}
 ]

@@ -15,7 +15,8 @@ spec:
         app: pokemon-app
     spec:
       securityContext:
-        runAsUser: 0
+        runAsUser: 1000
+        runAsNonRoot: true
       containers:
         - name: pokemon-app
           image: pokemon-app:latest
