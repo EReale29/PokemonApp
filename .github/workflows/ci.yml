@@ -62,6 +62,20 @@ jobs:
       - name: Lint kubernetes.yaml
         run: 'yamllint -d "{extends: default, rules: {line-length: {max: 120}, comments: disable}}" kubernetes.yaml'
 
+  lint-dockerfile:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Hadolint on Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          ignore: DL3009,DL3018
+
   trivy-deps:
     name: Trivy Scan Dependencies
     runs-on: ubuntu-latest
