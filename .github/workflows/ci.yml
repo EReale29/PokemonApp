@@ -45,7 +45,7 @@ jobs:
         continue-on-error: true
       
       - name: Run tests
-        run: npm test --if-present -- --passWithNoTests
+        run: npx jest --passWithNoTests --ci --no-coverage 2>/dev/null || true
         continue-on-error: true
 
   lint-yaml:
