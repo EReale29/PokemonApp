@@ -155,8 +155,8 @@ jobs:
       
       - name: Install Conftest
         run: |
-          wget -O conftest.zip https://github.com/open-policy-agent/conftest/releases/download/v0.49.1/conftest_0.49.1_Linux_x86_64.zip
-          unzip conftest.zip
+          wget -q https://github.com/open-policy-agent/conftest/releases/download/v0.67.1/conftest_0.67.1_Linux_x86_64.tar.gz
+          tar -xzf conftest_0.67.1_Linux_x86_64.tar.gz
           sudo mv conftest /usr/local/bin/
           conftest --version
       
