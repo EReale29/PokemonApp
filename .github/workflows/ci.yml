@@ -1,0 +1,150 @@
+name: DevSecOps CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+        continue-on-error: false
+      
+      - name: Run linter
+        run: npm run lint --if-present
+        continue-on-error: true
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Run tests
+        run: npm test --if-present -- --passWithNoTests
+        continue-on-error: true
+
+  lint-yaml:
+    name: Lint YAML Files
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install yamllint
+        run: pip install yamllint
+      
+      - name: Lint kubernetes.yaml
+        run: yamllint -c "{extends: default, rules: {line-length: {max: 120}, comments: disable}}" kubernetes.yaml
+
+  trivy-deps:
+    name: Trivy Scan Dependencies
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Trivy scan on dependencies
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: false
+          severity: 'HIGH,CRITICAL'
+          output: 'trivy-deps-report.txt'
+      
+      - name: Upload Trivy dependencies report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: trivy-deps-report
+          path: trivy-deps-report.txt
+
+  trivy-image:
+    name: Trivy Scan Docker Image
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    needs: build
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          load: true
+          tags: pokemon-app:latest
+      
+      - name: Run Trivy scan on Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          input: 'pokemon-app:latest'
+          format: 'sarif'
+          output: 'trivy-image-report.sarif'
+      
+      - name: Upload Trivy image report to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-image-report.sarif'
+          category: 'trivy-image'
+      
+      - name: Upload Trivy image report as artifact
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: trivy-image-report
+          path: trivy-image-report.sarif
+
+  conftest:
+    name: Conftest Policy Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Conftest
+        run: |
+          wget -O conftest.zip https://github.com/open-policy-agent/conftest/releases/download/v0.49.1/conftest_0.49.1_Linux_x86_64.zip
+          unzip conftest.zip
+          sudo mv conftest /usr/local/bin/
+          conftest --version
+      
+      - name: Run Conftest policy check
+        run: |
+          conftest test kubernetes.yaml -p policy/ -o json > conftest-report.json
+        continue-on-error: false
+      
+      - name: Upload Conftest report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: conftest-report
+          path: conftest-report.json

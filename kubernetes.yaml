@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pokemon-app
+  labels:
+    app: pokemon-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pokemon-app
+  template:
+    metadata:
+      labels:
+        app: pokemon-app
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+      - name: pokemon-app
+        image: pokemon-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+          name: http
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pokemon-app-service
+  labels:
+    app: pokemon-app
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 3000
+    name: http
+  selector:
+    app: pokemon-app
