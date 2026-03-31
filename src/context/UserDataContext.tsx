@@ -19,12 +19,6 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
     const { data: session } = useSession();
     const [favorites, setFavorites] = useState<Pokemon[]>([]);
     const [team, setTeam] = useState<Pokemon[]>([]);
-
-    // Empêche toute exécution côté serveur
-    if (typeof window === "undefined") {
-        return <>{children}</>;
-    }
-
     // Fonction pour charger les favoris
     const reloadFavorites = useCallback(async () => {
         if (session?.user?.id) {
@@ -51,6 +45,7 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
 
     // Lorsqu'une session est présente, charger les données une fois au montage ou lors du changement de session
     useEffect(() => {
+        if (typeof window === "undefined") return;
         if (session?.user?.id) {
             reloadFavorites();
             reloadTeam();
@@ -60,6 +55,10 @@ export const UserDataProvider = ({ children }: { children: ReactNode }) => {
             setTeam([]);
         }
     }, [session, reloadFavorites, reloadTeam]);
+
+    if (typeof window === "undefined") {
+        return <>{children}</>;
+    }
 
     return (
         <UserDataContext.Provider value={{ favorites, team, reloadFavorites, reloadTeam }}>

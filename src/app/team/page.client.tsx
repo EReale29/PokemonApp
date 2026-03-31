@@ -78,71 +78,67 @@ export default function Team() {
         return <NotConnected />;
     }
 
+    if (loading) {
+        return <div className="text-center mt-5">Chargement de l&apos;équipe...</div>;
+    }
+    if (error) {
+        return <div className="alert alert-danger mt-5">{error}</div>;
+    }
+
     return (
         <div className="container mt-5">
-            <h2 className="text-center mb-4">Mon Équipe</h2>
-
-            {error && (
-                <div className="alert alert-danger text-center">
-                    {error}
-                </div>
-            )}
-
-            {loading ? (
-                <p>Chargement de votre équipe...</p>
-            ) : (
-                <div className="row">
-                    {team.length > 0 ? (
-                        team.map((pokemon) => (
-                            <div key={pokemon.id} className="col-md-6 mb-3">
-                                <div className="card">
-                                    <div className="card-body d-flex">
-                                        <Image
-                                            src={pokemon.image}
-                                            alt={pokemon.name}
-                                            width={150}
-                                            height={300}
-                                            style={{ width: "150px", height: "auto" }}
-                                            className="img-fluid rounded me-3"
-                                        />
-                                        <div className="d-flex flex-column">
-                                            <h5 className="card-title">{pokemon.name}</h5>
-                                            <p className="card-text">
-                                                Surnom: {pokemon.nickname || "Aucun"}
-                                            </p>
-                                            <button
-                                                className="btn btn-warning mb-2"
-                                                onClick={() => {
-                                                    const newNickname = prompt(
-                                                        "Entrez un surnom pour ce Pokémon:",
-                                                        pokemon.nickname
-                                                    );
-                                                    if (newNickname) {
-                                                        handleAddNickname(pokemon, newNickname);
-                                                    }
-                                                }}
-                                            >
-                                                Donner un surnom
-                                            </button>
-                                            <button
-                                                className="btn btn-danger"
-                                                onClick={() => {
-                                                    setPokemonToRemove(pokemon);
-                                                    setShowConfirm(true);
-                                                }}
-                                            >
-                                                Retirer de l&apos;équipe
-                                            </button>
-                                        </div>
+            <h2 className="text-center mb-4">Votre équipe Pokémon</h2>
+            <div className="row">
+                {team.length > 0 ? (
+                    team.map((pokemon) => (
+                        <div key={pokemon.id} className="col-md-6 mb-3">
+                            <div className="card">
+                                <div className="card-body d-flex">
+                                    <Image
+                                        src={pokemon.image}
+                                        alt={pokemon.name}
+                                        width={150}
+                                        height={300}
+                                        style={{ width: "150px", height: "auto" }}
+                                        className="img-fluid rounded me-3"
+                                    />
+                                    <div className="d-flex flex-column">
+                                        <h5 className="card-title">{pokemon.name}</h5>
+                                        <p className="card-text">
+                                            Surnom: {pokemon.nickname || "Aucun"}
+                                        </p>
+                                        <button
+                                            className="btn btn-warning mb-2"
+                                            onClick={() => {
+                                                const newNickname = prompt(
+                                                    "Entrez un surnom pour ce Pokémon:",
+                                                    pokemon.nickname
+                                                );
+                                                if (newNickname) {
+                                                    handleAddNickname(pokemon, newNickname);
+                                                }
+                                            }}
+                                        >
+                                            Donner un surnom
+                                        </button>
+                                        <button
+                                            className="btn btn-danger"
+                                            onClick={() => {
+                                                setPokemonToRemove(pokemon);
+                                                setShowConfirm(true);
+                                            }}
+                                        >
+                                            Retirer de l&apos;équipe
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        ))
-                    ) : (
-                        <p className="text-center">Votre équipe est vide.</p>
-                    )}
-                </div>
-            )}
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-center">Votre équipe est vide.</p>
+                )}
+            </div>
 
             {/* Confirmation de la suppression */}
             {showConfirm && pokemonToRemove && (
@@ -159,8 +155,7 @@ export default function Team() {
                             </div>
                             <div className="modal-body">
                                 <p>
-                                    Êtes-vous sûr de vouloir retirer{" "}
-                                    {pokemonToRemove.nickname || pokemonToRemove.name} de votre équipe ?
+                                    Êtes-vous sûr de vouloir retirer {pokemonToRemove.nickname || pokemonToRemove.name} de votre équipe ?
                                 </p>
                             </div>
                             <div className="modal-footer">

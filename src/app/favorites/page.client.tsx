@@ -51,7 +51,6 @@ export default function FavoritesPage() {
         setCurrentPage(1);
     };
 
-
     // Empêche le rendu côté serveur ou tant que la session est en chargement
     if (typeof window === "undefined" || status === "loading") {
         return null;
