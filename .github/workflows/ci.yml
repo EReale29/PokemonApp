@@ -177,13 +177,10 @@ jobs:
           fi
 
 
-      - name: Run Trivy scan on Docker image
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy CLI on Docker image
+        run: |
+          trivy image --format sarif --output trivy-image-report.sarif pokemon-app:latest
         continue-on-error: true
-        with:
-          input: 'pokemon-app:latest'
-          format: 'sarif'
-          output: 'trivy-image-report.sarif'
       
       - name: Upload Trivy image report to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
