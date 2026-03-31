@@ -15,6 +15,12 @@ interface UserDataContextType {
 const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
 
 export const UserDataProvider = ({ children }: { children: ReactNode }) => {
+
+    // Empêche toute exécution côté serveur
+    if (typeof window === "undefined") {
+        return children;
+    }
+
     const { data: session } = useSession();
     const [favorites, setFavorites] = useState<Pokemon[]>([]);
     const [team, setTeam] = useState<Pokemon[]>([]);
