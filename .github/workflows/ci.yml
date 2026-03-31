@@ -166,6 +166,13 @@ jobs:
             EMAIL_SERVER_PORT=${{ secrets.EMAIL_SERVER_PORT || 'demo-port' }}
             EMAIL_FROM=${{ secrets.EMAIL_FROM || 'demo-from' }}
 
+      - name: Vérifier l’existence de l’image Docker
+        run: |
+          if ! docker image inspect pokemon-app:latest > /dev/null 2>&1; then
+            echo "L’image pokemon-app:latest n’existe pas. Le scan Trivy ne sera pas lancé."
+            exit 1
+          fi
+
 
       - name: Run Trivy scan on Docker image
         uses: aquasecurity/trivy-action@master
