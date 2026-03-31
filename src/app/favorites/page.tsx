@@ -12,7 +12,7 @@ import { useUserData } from "@/context/UserDataContext";
 import { Pokemon } from "@/utils/types";
 
 export default function FavoritesPage() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const { favorites, reloadFavorites } = useUserData();
     const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]);
     const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
@@ -50,6 +50,12 @@ export default function FavoritesPage() {
         setFilteredPokemon(filtered);
         setCurrentPage(1);
     };
+
+
+    // Empêche le rendu côté serveur ou tant que la session est en chargement
+    if (typeof window === "undefined" || status === "loading") {
+        return null;
+    }
 
     if (!session) {
         return <NotConnected />;
