@@ -44,3 +44,7 @@ next-env.d.ts
 conftest-report.json
 trivy-*.txt
 trivy-*.sarif
+
+# local tooling
+.vscode/
+.venv/
