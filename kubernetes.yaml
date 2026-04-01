@@ -21,6 +21,8 @@ spec:
         - name: pokemon-app
           image: pokemon-app:latest
           imagePullPolicy: Never
+          securityContext:
+            runAsUser: 0
           ports:
             - containerPort: 3000
               name: http
