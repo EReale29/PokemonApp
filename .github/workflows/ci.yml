@@ -98,7 +98,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Run Trivy scan on dependencies
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         continue-on-error: true
         with:
           scan-type: 'fs'
