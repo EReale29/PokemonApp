@@ -34,10 +34,10 @@ PokemonApp/
 │   ├── requirements.txt         # Dépendances volontairement datées
 │   └── Dockerfile               # Image python:3.11-slim
 └── .github/workflows/
-    └── ci.yml                   # Pipeline 7 jobs
+    └── ci.yml                   # Pipeline 6 jobs
 ```
 
-### 2.2 Pipeline CI/CD configuré (7 jobs)
+### 2.2 Pipeline CI/CD configuré (6 jobs)
 
 | Job               | Objectif                          | Outil              |
 |-------------------|-----------------------------------|--------------------|
