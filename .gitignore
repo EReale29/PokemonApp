@@ -42,3 +42,5 @@ next-env.d.ts
 
 # conftest
 conftest-report.json
+trivy-*.txt
+trivy-*.sarif

@@ -116,6 +116,25 @@ jobs:
           name: trivy-deps-report
           path: trivy-deps-report.txt
 
+      - name: Run Trivy scan on Flask API dependencies
+        uses: aquasecurity/trivy-action@v0.35.0
+        continue-on-error: true
+        with:
+          scan-type: 'fs'
+          scan-ref: 'api/'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: false
+          severity: 'HIGH,CRITICAL'
+          output: 'trivy-flask-report.txt'
+
+      - name: Upload Trivy Flask API report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-flask-report
+          path: trivy-flask-report.txt
+
   trivy-image:
     name: Build and Scan Docker Image
     runs-on: ubuntu-latest

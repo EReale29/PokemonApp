@@ -1,249 +1,258 @@
-# Rapport DevSecOps - PokemonApp
-## 5DVSCOPS - ÉSTIAM - Laurent Frerebeau
+# Rapport DevSecOps — PokemonApp
+## 5DVSCOPS — ÉSTIAM — Laurent Frerebeau
 
-**Date :** 1er avril 2026 (MAJ)
-**Projet :** Implémentation d'une Pipeline DevSecOps pour l'application PokemonApp  
-**Auteur :** Étudiant en Cybersécurité
-
----
-
-## 1. Résumé Exécutif
-
-Ce rapport documente la mise en place d'une **pipeline DevSecOps complète** sur GitHub Actions, intégrant trois piliers de la sécurité en continu :
-
-1. **Build sécurisé** : Construction d'une image Docker multi-étages optimisée
-2. **Analyse statique** : Scan YAML avec yamllint et scans de sécurité Trivy
-3. **Validation de politique** : Détection des violations de sécurité avec Conftest (OPA/Rego)
-
-Cette approche garantit que chaque commit est validé selon des critères de sécurité définis, tout en documentant les vulnérabilités découvertes. L'objectif pédagogique est de démontrer comment l'intégration continue peut devenir **intégration continue de la sécurité (CI/CD de sécurité)**.
+**Date :** 1er avril 2026
+**Auteur :** Enzo Reale
+**Projet :** Pipeline DevSecOps pour PokemonApp
 
 ---
 
-## 2. Architecture et Composants
+## 1. Présentation du projet
 
-### 2.1 Pipeline CI/CD
-La pipeline GitHub Actions comprend **5 jobs parallélisables et dépendants** :
+PokemonApp est une application Next.js/TypeScript permettant
+d'explorer des Pokémons, gérer des favoris et une équipe via
+Firebase, et s'authentifier via Google/GitHub avec NextAuth.js.
 
-| Job | Objectif | Critères Succès |
-|-----|----------|-----------------|
-| **build** | Compiler l'app Next.js | Pas d'erreur de build |
-| **lint-yaml** | Valider la syntaxe Kubernetes | Config YAML conforme |
-| **trivy-deps** | Scanner les dépendances npm | Rapport généré (v0.35.0, continue) |
-| **trivy-image** | Build + Scanner l'image Docker | Build + Rapport SARIF téléchargé |
-| **conftest** | Valider les politiques K8s | **DOIT échouer** (root détecté) |
+Pour les besoins de ce projet DevSecOps, une API Flask dédiée
+(dossier api/) a été ajoutée avec des dépendances volontairement
+datées afin de générer des CVE détectables par Trivy.
 
-### 2.2 Fichiers Créés
+---
+
+## 2. AVANT — État initial et mise en place du pipeline
+
+### 2.1 Fichiers créés pour le projet DevSecOps
+
 ```
 PokemonApp/
-├── Dockerfile                    (Build multi-stage Node.js 18-alpine)
-├── kubernetes.yaml               (Deployment avec runAsUser: 0)
+├── Dockerfile                    # Build multi-stage node:18-alpine
+├── kubernetes.yaml               # Deployment avec faille volontaire
 ├── policy/
-│   └── deny_root.rego           (Règle OPA/Rego)
-├── .github/workflows/
-│   └── ci.yml                    (Pipeline 5 jobs)
-└── RAPPORT_DEVSECOPS.md          (Ce rapport)
+│   └── deny_root.rego           # Règle OPA/Rego
+├── api/
+│   ├── app.py                   # API Flask Pokémon
+│   ├── requirements.txt         # Dépendances volontairement datées
+│   └── Dockerfile               # Image python:3.11-slim
+└── .github/workflows/
+    └── ci.yml                   # Pipeline 7 jobs
 ```
 
-### 2.3 Dockerfile - Optimisation de Sécurité
-Le Dockerfile implémente les bonnes pratiques :
-- **Multi-stage build** : Réduit la taille de 45-60%
-- **Image légère** : node:18-alpine (base de sécurité renforcée)
-- **Dépendances minimales** : Séparation dépendances build/production
-- **Healthcheck** : Validation du service en continu
-- **Non-root par défaut** : Node.js run en tant qu'utilisateur non-root en production
+### 2.2 Pipeline CI/CD configuré (7 jobs)
 
-### 2.4 Kubernetes.yaml - Configuration Intentionnellement Vulnérable
-Le manifeste est configuré avec **runAsUser: 0** pour démontrer :
-- Comment Conftest détecte les violations de politique
-- L'importance du RBAC et des security contexts
-- L'automatisation du contrôle de conformité
+| Job               | Objectif                          | Outil              |
+|-------------------|-----------------------------------|--------------------|
+| build             | Build Next.js + tests Jest        | Node.js 18         |
+| lint-yaml         | Validation kubernetes.yaml        | yamllint           |
+| lint-dockerfile   | Lint Dockerfile bonnes pratiques  | Hadolint           |
+| trivy-deps        | Scan dépendances npm + Flask API  | Trivy v0.35.0      |
+| trivy-image       | Scan image Docker Next.js         | Trivy v0.35.0      |
+| conftest          | Politique sécurité Kubernetes     | OPA/Conftest v0.67 |
+
+### 2.3 Sécurité du pipeline
+
+Conformément aux best practices DevSecOps, le pipeline déclare
+des permissions minimales (principe du moindre privilège) :
 
 ```yaml
-spec:
-  securityContext:
-    runAsUser: 0  # ⚠️ Configuration volontairement dangereuse
+permissions:
+  contents: read        # Lecture du code uniquement
+  security-events: write # Upload rapports SARIF
+  actions: read         # Lecture des artifacts
 ```
+
+La version trivy-action@v0.35.0 est utilisée — version sûre
+publiée après la compromission supply chain du 19 mars 2026
+qui avait affecté les versions 0.0.1 à 0.34.2.
+
+### 2.4 Failles volontairement introduites
+
+FAILLE 1 — kubernetes.yaml configuré avec runAsUser: 0
+
+```yaml
+# État initial vulnérable (pour démonstration Conftest)
+securityContext:
+  runAsUser: 0               # Container en root
+  allowPrivilegeEscalation: true
+```
+
+FAILLE 2 — api/requirements.txt avec versions datées contenant
+des CVE HIGH documentées sur NVD et GitHub Advisory Database.
 
 ---
 
-## 3. Règles de Sécurité Conftest (OPA/Rego)
+## 3. PENDANT — Exécution du pipeline et détection des failles
 
-### Objectif
-Refuser le déploiement de pods configurés pour s'exécuter en root, qui représentent un risque majeur :
+### 3.1 Vulnérabilités détectées par Trivy — Dépendances npm
+
+Le scan Trivy sur le projet Next.js détecte des dépendances
+npm dépréciées et non maintenues : glob@7.2.3, inflight@1.0.6,
+domexception@4.0.0, abab@2.0.6. Ces packages sont signalés
+comme deprecated et doivent être mis à jour.
+
+### 3.2 Vulnérabilités détectées par Trivy — API Flask
+
+Le scan Trivy sur api/requirements.txt détecte les CVE suivantes,
+toutes vérifiées sur NVD (nvd.nist.gov) et GitHub Advisory :
+
+| Package          | CVE            | CVSS | CWE     | Description                                 | Correctif      |
+|------------------|----------------|------|---------|---------------------------------------------|----------------|
+| Flask 2.1.0      | CVE-2023-30861 | 7.5  | CWE-539 | Divulgation cookie session permanent        | Flask 2.3.2    |
+| Werkzeug 2.1.0   | CVE-2023-25577 | 7.5  | CWE-770 | DoS via parsing multipart illimité          | Werkzeug 2.2.3 |
+| Werkzeug 2.1.0   | CVE-2024-34069 | 7.5  | CWE-352 | RCE via débogueur (CSRF + localhost bypass) | Werkzeug 3.0.3 |
+| gunicorn 20.1.0  | CVE-2024-1135  | HIGH | CWE-444 | HTTP Request Smuggling (Transfer-Encoding)  | gunicorn 22.0  |
+| Jinja2 3.0.3     | CVE-2024-34064 | 5.4  | CWE-79  | XSS via filtre xmlattr (vol de cookies)     | Jinja2 3.1.4   |
+
+### 3.3 Détection Conftest — Policy as Code
+
+Le job Conftest teste kubernetes.yaml contre la règle OPA/Rego :
 
 ```rego
 package main
 
-deny[msg] {
-    # Détecte les conteneurs avec runAsUser: 0
-    container := input.spec.template.spec.containers[_]
-    container.securityContext.runAsUser == 0
-    msg := sprintf("Le pod tourne en root, déploiement refusé", [])
+deny contains msg if {
+  input.kind == "Deployment"
+  container := input.spec.template.spec.containers[_]
+  container.securityContext.runAsUser == 0
+  msg := sprintf(
+    "REFUSÉ : le container '%v' tourne en root. Déploiement bloqué.",
+    [container.name]
+  )
 }
 ```
 
-### Pourquoi le Root est Dangereux en Kubernetes
-1. **Escalade de privilèges** : Si le conteneur est compromis, l'attaquant obtient les droits root
-2. **Breach d'isolation** : Possibilité d'accès au host depuis le conteneur
-3. **Manipulation d'images** : Liberté totale pour modifier le filesystem
-4. **Audit & Conformité** : Violation des standards CIS Benchmarks et PCI-DSS
-
-### Résultat Attendu de Conftest
-Le job Conftest **DOIT échouer** avec le message :
+Résultat attendu dans les logs GitHub Actions :
 ```
-Le pod tourne en root, déploiement refusé
+FAIL - kubernetes.yaml - main - REFUSÉ : le container
+'pokemon-app' tourne en root. Déploiement bloqué.
 ```
 
-Cet **échec prévisible** valide que la règle fonctionne correctement.
+Cet échec est VOLONTAIRE — il prouve que la règle OPA/Rego
+fonctionne et bloque les déploiements non conformes.
+
+### 3.4 Analyse CID des vulnérabilités
+
+La méthode CID (Confidentialité, Intégrité, Disponibilité)
+issue du cours permet d'évaluer l'impact réel de chaque faille.
+
+#### Confidentialité (C)
+- **CVE-2023-30861** (Flask 2.1.0, CVSS 7.5) : divulgation du
+  cookie de session permanent via un proxy cache. Un attaquant
+  peut usurper l'identité d'un utilisateur et accéder à ses
+  favoris et équipe Pokémon Firebase. Impact : **HAUT**
+- **CVE-2024-34064** (Jinja2 3.0.3) : XSS via le filtre xmlattr
+  permettant le vol de cookies d'authentification. Impact : **MOYEN**
+- Clés Firebase non sécurisées dans les variables d'environnement :
+  accès potentiel non autorisé à la base de données. Impact : **HAUT**
+
+#### Intégrité (I)
+- **CVE-2024-34069** (Werkzeug 2.1.0, CVSS 7.5) : RCE via le
+  débogueur Werkzeug. Un attaquant peut exécuter du code arbitraire
+  sur le serveur même si le débogueur tourne en localhost.
+  Impact : **CRITIQUE**
+- **runAsUser: 0** dans kubernetes.yaml : si le container est
+  compromis, l'attaquant obtient les droits root sur le host
+  Kubernetes, pouvant modifier ou supprimer des données.
+  Impact : **CRITIQUE**
+
+#### Disponibilité (D)
+- **CVE-2023-25577** (Werkzeug 2.1.0, CVSS 7.5) : DoS par parsing
+  multipart illimité, épuisant CPU et RAM jusqu'au kill du process.
+  Impact : **HAUT**
+- **CVE-2024-1135** (gunicorn 20.1.0) : HTTP Request Smuggling
+  via validation incorrecte du header Transfer-Encoding, permettant
+  de saturer l'API et de bloquer les requêtes légitimes.
+  Impact : **HAUT**
+- **allowPrivilegeEscalation: true** : escalade de privilèges
+  pouvant compromettre tout le cluster Kubernetes. Impact : **CRITIQUE**
+
+### 3.5 Incident supply chain Trivy (mars 2026)
+
+Le 19 mars 2026, les versions 0.0.1 à 0.34.2 de trivy-action
+ont été compromises par un credential stealer injectant du code
+malveillant dans les runners GitHub Actions pour exfiltrer les
+secrets CI/CD vers un domaine contrôlé par l'attaquant.
+
+Ce projet utilise trivy-action@v0.35.0, version sûre publiée
+après containment de l'attaque. Cet incident illustre
+concrètement les risques supply chain étudiés en cours —
+l'importance d'épingler les versions des GitHub Actions.
 
 ---
 
-## 4. Scans Trivy et Vulnérabilités
+## 4. APRÈS — Corrections et recommandations
 
-### 4.0 Versions Trivy et Sécurité de la Supply Chain
-**Upgrade important (1er avril 2026)** : Les deux jobs Trivy utilisent maintenant `aquasecurity/trivy-action@v0.35.0`.
+### 4.1 Correction Kubernetes (état production)
 
-Raison : L'action Trivy (versions antérieures) a été compromise en janvier 2025. La version `@v0.35.0` est la première version sûre post-compromise. Cet upgrade garantit que les scans sont exécutés sans risque d'injection de malware via l'action GitHub.
-
-**Security Advisory** :
 ```yaml
-trivy-deps:
-   uses: aquasecurity/trivy-action@v0.35.0  # Safe version
+# AVANT — vulnérable (état actuel pour démonstration)
+securityContext:
+  runAsUser: 0
+  allowPrivilegeEscalation: true
 
-trivy-image:
-   uses: aquasecurity/trivy-action@v0.35.0  # Safe version
+# APRÈS — corrigé pour la production
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
 ```
 
-### 4.1 Scan des Dépendances (trivy-deps)
-Trivy analyse `package.json` et `package-lock.json` pour :
-- **Dépendances obsolètes** sans correctifs
-- **Vulnérabilités connues** (CVE publiés)
-- **Sévérités HIGH et CRITICAL** uniquement
-
-Dépendances critiques de PokemonApp à monitorer :
-- `next` - Vulnérabilités fréquentes côté server
-- `next-auth` - Authentification critique
-- `firebase` - Accès base de données
-- `nodemailer` - Envoi d'emails (injection possible)
-
-**Continuité du pipeline** : `continue-on-error: true` permet de continuer même avec vulnérabilités trouvées.
-
-### 4.2 Scan de l'Image Docker (trivy-image)
-**Consolidation du job** : La build Docker et le scan Trivy sont maintenant dans le **même job**.
-
-Cela résout le problème précédent où l'image `pokemon-app:latest` n'était pas trouvée car les jobs étaient séparés.
-
-Étapes du job `trivy-image` :
-1. ✅ Checkout du code
-2. ✅ Build de l'image Docker avec tous les build-args
-3. ✅ Scan Trivy de l'image construite (`pokemon-app:latest`)
-4. ✅ Format **SARIF** pour intégration GitHub Security tab
-5. ✅ Détection des vulnérabilités du système d'exploitation
-- Rapport uploadé dans "Security > Code scanning" via `github/codeql-action/upload-sarif@v4`
-- Artefact SARIF également téléchargé pour archivage
-- Rapport uploadé dans "Security > Code scanning"
-
-### Vision Générale des Vulnérabilités Attendues
-PokemonApp utilise des dépendances populaires. Les vulnérabilités typiques :
-- **Injection SQL/NoSQL** : Via Firebase (requête mal formée)
-- **XSS** : Interface React sans sanitization
-- **CSRF** : NextAuth mal configuré
-- **RCE** : npm dependencies avec exec() non validées
-
----
-
-## 5. Recommandations de Sécurité pour PokemonApp
-
-### 5.1 Sécurité du Conteneur (Immédiat)
-1. **Modifier kubernetes.yaml** : `runAsUser: 1000` (utilisateur non-root)
-2. **Ajouter NetworkPolicy** : Isoler le trafic pod
-3. **ReadOnlyRootFilesystem** : Système de fichiers immuable
-4. **Dropabilités Linux** : Limiter cap_sys_admin, cap_net_admin
-
-### 5.2 Sécurité de l'Application (Court terme)
-1. **NextAuth.js** :
-   - Augmenter la rotation des tokens de session
-   - Implémenter OAuth2 avec PKCE
-   - Activer les refresh tokens sécurisés
-
-2. **Firebase** :
-   - Valider les requêtes côté serveur
-   - Implémenter les Firestore security rules strictes
-   - Audit des accès et read/write logs
-
-3. **Nodemailer** :
-   - Utiliser variables d'environnement pour credentials SMTP
-   - Valider les emails entrants contre injection
-   - Rate-limiting sur l'envoi
-
-### 5.3 Pipeline DevSecOps (Évolution)
-1. **Ajouter SAST** : SonarQube ou Semgrep pour l'analyse statique du code
-2. **DAST en staging** : Tests dynamiques avant production
-3. **Dependency updates** : Dependabot pour maintenir les packages à jour
-4. **Container registry scanning** : Scan automatique des images pushées
-
-### 5.4 Infrastructure & Déploiement
-1. **Pod security standards** : Appliquer "restricted" au cluster
-2. **Service accounts** : RBAC minimal par pod
-3. **Secrets management** : Vault ou sealed-secrets au lieu des ConfigMaps
-4. **Image signing** : Cosign ou Kyverno pour la signature d'images
-
----
-
-## 6. Intégration Sécurité dans le CI/CD
-
-### 6.1 Philosophie DevSecOps
-Le DevSecOps intègre la sécurité dès la conception plutôt qu'en fin de cycle. Cette pipeline démontre :
+### 4.2 Correction API Flask (versions sécurisées)
 
 ```
-Plan → Code → Build → Test → Deploy → Monitor
-  ↓     ↓      ↓      ↓      ↓       ↓
-Menace Commit Trivy Conftest Audit Registry
-Model Review  SCA   Policy    Logs   Scan
+# AVANT — versions vulnérables
+Flask==2.1.0        → CVE-2023-30861
+Werkzeug==2.1.0     → CVE-2023-25577, CVE-2024-34069
+gunicorn==20.1.0    → CVE-2024-1135
+Jinja2==3.0.3       → CVE-2024-34064
+
+# APRÈS — versions corrigées
+Flask>=3.0.0
+Werkzeug>=3.0.3
+gunicorn>=22.0.0
+Jinja2>=3.1.4
 ```
 
-### 6.2 Bénéfices pour PokemonApp
-1. **Détection précoce** : Vulnérabilités attrapées en minutes, pas en mois
-2. **Feedback rapide** : Développeurs corrigent immédiatement
-3. **Compliance automation** : Pas de déploiement sans validation
-4. **Traçabilité** : Chaque artefact est scanné et documenté
-5. **Culture de sécurité** : Les développeurs apprennent les bonnes pratiques
+### 4.3 Recommandations pour PokemonApp
 
-### 6.3 Métriques de Succès
-- **MTTR (Mean Time To Remediate)** : < 48h pour fixer les CVE critiques
-- **Coverage** : 100% des images Docker scannées
-- **Policy violations** : 0 pod en root en production
-- **Supply chain** : Toutes les dépendances tracées et versionnées
+1. Stocker toutes les clés Firebase dans GitHub Secrets
+2. Rotation régulière du NEXTAUTH_SECRET (TTL < 24h)
+3. Activer Dependabot pour mises à jour automatiques
+4. Ajouter SAST (Semgrep) pour analyse statique TypeScript
+5. Ajouter DAST (OWASP ZAP) sur environnement staging
+6. Migrer vers une image Docker distroless pour réduire la
+   surface d'attaque
 
----
+### 4.4 Métriques DevSecOps cibles
 
-## 7. Conclusion
-
-Cette implémentation DevSecOps représente le **minimum viable** pour un projet de production. Elle démontre comment GitHub Actions, Trivy, et Conftest s'articulent pour créer une chaîne de sécurité continue.
-
-**Points clés validés** :
-✅ Build sécurisé avec Docker multi-stage  
-✅ Scan YAML automatisé  
-✅ Détection des vulnérabilités dépendances  
-✅ Scan des images Docker  
-✅ Validation des politiques de sécurité avec Conftest  
-
-**Prochaines étapes** : Intégrer SAST, implémenter Dependency management, et migrer vers une architecture zero-trust en production.
+| Métrique               | Objectif |
+|------------------------|----------|
+| MTTR vulns critiques   | < 48h    |
+| Images Docker scannées | 100%     |
+| Pods en root en prod   | 0        |
+| Secrets commités       | 0        |
+| Coverage tests sécu    | > 80%    |
 
 ---
 
-## 8. Ressources et Références
+## 5. Conclusion
 
-- [OWASP DevSecOps Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/DevSecOps_Cheat_Sheet.html)
-- [CIS Kubernetes Benchmarks](https://www.cisecurity.org/benchmark/kubernetes)
-- [CISA - Secure by Default](https://www.cisa.gov/secure-by-design-secure-by-default)
-- [Trivy Documentation](https://aquasecurity.github.io/trivy/)
-- [OPA/Rego Language Docs](https://www.openpolicyagent.org/docs/latest/policy-language/)
-- [GitHub Actions Security Best Practices](https://docs.github.com/en/actions/security-guides)
+Ce projet démontre l'intégration complète d'une chaîne DevSecOps
+appliquant le principe Shift Left : détection précoce des
+vulnérabilités dépendances (SCA via Trivy), scan d'image Docker,
+et Policy as Code avec OPA/Conftest. L'incident supply chain
+Trivy de mars 2026 vécu durant ce projet illustre concrètement
+les enjeux réels de la sécurité de la chaîne d'approvisionnement
+logicielle abordés dans le cours.
 
 ---
 
-**Rapport généré** : 30 mars 2026  
-**Mise à jour** : 1er avril 2026 (Trivy v0.35.0, consolidation jobs, codeql-action v4)
-**Projet académique** : 5DVSCOPS - Cybersécurité DevOps  
-**Cours** : Laurent Frerebeau - ÉSTIAM
+## Références
+
+- OWASP DevSecOps Guideline — owasp.org
+- CIS Kubernetes Benchmarks — cisecurity.org
+- NVD CVE Database — nvd.nist.gov
+- Trivy Documentation — aquasecurity.github.io/trivy
+- OPA/Rego Language — openpolicyagent.org
+- GitHub Actions Security — docs.github.com/actions/security-guides
+- Trivy Supply Chain Attack (mars 2026) — aquasec.com/blog

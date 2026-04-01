@@ -1,0 +1,7 @@
+# Versions volontairement datées pour démonstration Trivy
+# Ces versions contiennent des CVE HIGH/MEDIUM documentées (NVD/GitHub Advisory)
+Flask==2.1.0
+Werkzeug==2.1.0
+requests==2.27.1
+gunicorn==20.1.0
+Jinja2==3.0.3
