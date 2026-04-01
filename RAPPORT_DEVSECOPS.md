@@ -1,7 +1,7 @@
 # Rapport DevSecOps - PokemonApp
 ## 5DVSCOPS - ÉSTIAM - Laurent Frerebeau
 
-**Date :** 30 mars 2026  
+**Date :** 1er avril 2026 (Mise à jour)
 **Projet :** Implémentation d'une Pipeline DevSecOps pour l'application PokemonApp  
 **Auteur :** Étudiant en Cybersécurité
 
@@ -22,14 +22,14 @@ Cette approche garantit que chaque commit est validé selon des critères de sé
 ## 2. Architecture et Composants
 
 ### 2.1 Pipeline CI/CD
-La pipeline GitHub Actions comprend **5 jobs parallélisables et dépendants** :
+La pipeline GitHub Actions comprend **5 jobs parallélisables et dépendants** (révisée avril 2026) :
 
 | Job | Objectif | Critères Succès |
 |-----|----------|-----------------|
 | **build** | Compiler l'app Next.js | Pas d'erreur de build |
 | **lint-yaml** | Valider la syntaxe Kubernetes | Config YAML conforme |
-| **trivy-deps** | Scanner les dépendances npm | Rapport généré (continue) |
-| **trivy-image** | Scanner l'image Docker | Rapport SARIF téléchargé |
+| **trivy-deps** | Scanner les dépendances npm | Rapport généré (v0.35.0, continue) |
+| **trivy-image** | Build + Scanner l'image Docker | Build + Rapport SARIF téléchargé |
 | **conftest** | Valider les politiques K8s | **DOIT échouer** (root détecté) |
 
 ### 2.2 Fichiers Créés
@@ -100,6 +100,20 @@ Cet **échec prévisible** valide que la règle fonctionne correctement.
 
 ## 4. Scans Trivy et Vulnérabilités
 
+### 4.0 Versions Trivy et Sécurité de la Supply Chain
+**Upgrade important (1er avril 2026)** : Les deux jobs Trivy utilisent maintenant `aquasecurity/trivy-action@v0.35.0`.
+
+Raison : L'action Trivy (versions antérieures) a été compromise en janvier 2025. La version `@v0.35.0` est la première version sûre post-compromise. Cet upgrade garantit que les scans sont exécutés sans risque d'injection de malware via l'action GitHub.
+
+**Security Advisory** :
+```yaml
+trivy-deps:
+   uses: aquasecurity/trivy-action@v0.35.0  # Safe version
+
+trivy-image:
+   uses: aquasecurity/trivy-action@v0.35.0  # Safe version
+```
+
 ### 4.1 Scan des Dépendances (trivy-deps)
 Trivy analyse `package.json` et `package-lock.json` pour :
 - **Dépendances obsolètes** sans correctifs
@@ -115,9 +129,18 @@ Dépendances critiques de PokemonApp à monitorer :
 **Continuité du pipeline** : `continue-on-error: true` permet de continuer même avec vulnérabilités trouvées.
 
 ### 4.2 Scan de l'Image Docker (trivy-image)
-- Format **SARIF** pour intégration GitHub Security tab
-- Scan des couches de l'image
-- Détection des vulnérabilités du système d'exploitation
+**Consolidation du job (avril 2026)** : La build Docker et le scan Trivy sont maintenant dans le **même job**.
+
+Cela résout le problème précédent où l'image `pokemon-app:latest` n'était pas trouvée car les jobs étaient séparés.
+
+Étapes du job `trivy-image` :
+1. ✅ Checkout du code
+2. ✅ Build de l'image Docker avec tous les build-args
+3. ✅ Scan Trivy de l'image construite (`pokemon-app:latest`)
+4. ✅ Format **SARIF** pour intégration GitHub Security tab
+5. ✅ Détection des vulnérabilités du système d'exploitation
+- Rapport uploadé dans "Security > Code scanning" via `github/codeql-action/upload-sarif@v4`
+- Artefact SARIF également téléchargé pour archivage
 - Rapport uploadé dans "Security > Code scanning"
 
 ### Vision Générale des Vulnérabilités Attendues
@@ -221,5 +244,6 @@ Cette implémentation DevSecOps représente le **minimum viable** pour un projet
 ---
 
 **Rapport généré** : 30 mars 2026  
+**Mise à jour** : 1er avril 2026 (Trivy v0.35.0, consolidation jobs, codeql-action v4)
 **Projet académique** : 5DVSCOPS - Cybersécurité DevOps  
 **Cours** : Laurent Frerebeau - ÉSTIAM
