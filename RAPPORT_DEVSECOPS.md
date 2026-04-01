@@ -1,7 +1,7 @@
 # Rapport DevSecOps - PokemonApp
 ## 5DVSCOPS - ÉSTIAM - Laurent Frerebeau
 
-**Date :** 1er avril 2026 (Mise à jour)
+**Date :** 1er avril 2026 (MAJ)
 **Projet :** Implémentation d'une Pipeline DevSecOps pour l'application PokemonApp  
 **Auteur :** Étudiant en Cybersécurité
 
@@ -22,7 +22,7 @@ Cette approche garantit que chaque commit est validé selon des critères de sé
 ## 2. Architecture et Composants
 
 ### 2.1 Pipeline CI/CD
-La pipeline GitHub Actions comprend **5 jobs parallélisables et dépendants** (révisée avril 2026) :
+La pipeline GitHub Actions comprend **5 jobs parallélisables et dépendants** :
 
 | Job | Objectif | Critères Succès |
 |-----|----------|-----------------|
@@ -129,7 +129,7 @@ Dépendances critiques de PokemonApp à monitorer :
 **Continuité du pipeline** : `continue-on-error: true` permet de continuer même avec vulnérabilités trouvées.
 
 ### 4.2 Scan de l'Image Docker (trivy-image)
-**Consolidation du job (avril 2026)** : La build Docker et le scan Trivy sont maintenant dans le **même job**.
+**Consolidation du job** : La build Docker et le scan Trivy sont maintenant dans le **même job**.
 
 Cela résout le problème précédent où l'image `pokemon-app:latest` n'était pas trouvée car les jobs étaient séparés.
 
